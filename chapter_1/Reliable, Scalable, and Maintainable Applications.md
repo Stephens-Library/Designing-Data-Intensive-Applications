@@ -53,4 +53,32 @@ The client requests come through an API and now, the juicy stuff! There are four
         - Retry the task after a delay
         - Move the message to a dead letter queue for later inspection
 
+When you combine several tools in order to provide a service, the service's interface or application programming interface (API) usually hides those implementation details from clients
+
+## Questions that Data Systems Engineers Asks
+This brings you from the world of application development to data system designing.
+
+With this arises many questions:
+- How can we ensure the data remains correct and complete, even when things go wrong internally?
+- How can we provide consistent and high performance to clients, even when parts of the system are degraded?
+- How do you scale to handle an increase load?
+- What does a good API for the service look like?
+
+## The Three Most Important Concerns in Software Systems
+There are many factors that may influence the design of a system, such as:
+- The skills of the people involved
+- Legacy system dependencies
+- Timescale for delivery
+- Risk tolerance
+- Regulatory constraints
+
+We will focus on the three most important concerns in software systems:
+1. **Reliability**
+The system should continue to work correctly even in the face of *adversity* (software faults, human error)
+
+2. **Scalibility**
+As the system grows (in data volume, traffic volume, and complexity), there should be a reasonable way of dealing with that growth
+
+3. **Maintainability**
+Over time, many different people will work on the system, they should all be able to work on it productively
 
