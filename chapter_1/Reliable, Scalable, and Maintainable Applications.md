@@ -82,22 +82,3 @@ As the system grows (in data volume, traffic volume, and complexity), there shou
 3. **Maintainability**
 Over time, many different people will work on the system, they should all be able to work on it productively
 
-### Reliability
-Everybody has an intuitive idea of what it means for something to be reliable or unreliable. For software, typical expectations include:
-- The application performs the function that the user expected
-- It can tolerate the user making mistakes or using the software in unexpected ways
-- Its performance is good enough for the required use case, under the expected load and data volume
-- The system prevents any unauthorized access and abuse
-
-Things that can go wrong are *faults*, and systems that anticipate faults can cope with them, are are called *fault-tolerant* or *resilient*
-
-Note that a fault is different from a failure. A fault is usually defined as one component of the system deviating from its spec, whearas a *failure* is when the system as a whole stops providing the required service to the user
-
-It is impossible to reduce the probability of a fault to zero, therefore it is usually best to design fault-tolerance mechanisms that prevent faults from causing failures
-
-Counterintuitively, in such fault-tolerance systems, it can make sense to increase the rate of faults by triggering them deliberately, like killing random processes without warning, this can ensure that the fault-tolerance machinery is continually exercised and tested
-
-Though we generally prefer fault tolerance over fault preventation, there are cases where prevention is better than the cure, because no cure exists, such as if an attacker has comprimised te system, however we will mostly talk about faults that can be cured.
-
-
-
