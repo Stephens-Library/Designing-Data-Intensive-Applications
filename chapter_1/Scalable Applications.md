@@ -83,3 +83,60 @@ In the example of Twitter, the distribution of followers per user is a key load 
 Finally, Twitter is moving to a hybrid of these two approaches where a small number of users with a large number of followers are exempt from this fan-out, these tweets are fetched separately and merged with that user's home timeline when it is read
 
 This means that for celebrities, their tweets are stored separately in a central repository, when one of their followers reads their home timelines, the system dynamically fetches the celebrity's tweet from the "All Tweets" Database, this is merged with pre-distributed tweets from other sources
+
+## Describing Performance
+Once the load on your system has been described, you can investigate what happens when the load increases, there are two ways to look at it:
+
+1. When the load parameter increases and the system resources are unchanged (CPU, memory, bandwidth), how is the performance affected?
+2. When a load paramter is increased, how much must the resources increase to keep the performances unchanged
+
+Both questions require a performance numbers, so let's look briefly at describing the performance of the system
+
+In a batch processing system such as Hadoop, we care about *throughput*, the number of records we can process per second, or the total time it takes to run a job on a dataset of a certain size
+
+In online system, we care about *response times*, that is the time between a client sending a request and receiving a response
+
+## Latency and Response Times
+*Latency* and *response time* are often used synchronously, but they are not the same
+
+- The response time is what the client sees, aside from actual time to process the request it also includes network delays and queuing delays
+- Latency is the duration that a request is waiting to be handle, during which it is *latent* awaiting service
+
+In practice, a system handling a variety of requests, the response time can vary a lot, we therefore need to think of response time not as a single number , but as a *distribution* of values
+
+Most requests are reasonably fast, but there are always outliers, perhaps random additional latency can be introduced by:
+- A context switch to a background process
+- The loss of a network packet
+- TCP retransmission
+- A garbage collection pause
+- A page fault forcing a read from disk
+- Mechanical vibrations in the server rack, or any other causes
+
+It's common to see the *average* (arithmetic mean) response time of a service reported, though this is not a good metric as it doesn't tell you how many users experience it
+
+A better way is to use *percentiles*, this is a good metric if you want to know how long users typically have to wait
+
+In order to figure out how bad outliers are, higher pecentiles should be looked at, the *95th*, *99th* and *99.9* percentiles are common (abbreviated to *p95*, *p99*, and *p999*)
+
+High percentile responses also known as *tail letencies* are important as they directly affect users' experience
+
+For example, Amazon describes response time requirements for internal services in terms of 99.9th percentile even though it only affects 1 in 1,000 requests
+
+This is because customers with the slowest requests are often those who have the most data on their accounts because they have made many purchases
+
+On the other hand, optimizing 99.99th percentile (the slowest 1 in 10,000) was deemed too expensive and to not yield enough benefit for Amazon's purposes
+
+Percentiles are often ued in *service level objectives* (SLOs) and *service level agreements* (SLAs), contracts that define the expected performance and availability of a service
+
+These metrics set expectations for clients of the service and allow customers to demand a refund if the SLA is not met
+
+Queuing delays are often account for a large part of the response time at high percentiles, as a server can only process a small number of things in parallel
+
+It only takes a small number of slow requests to hold up the processing of subsequent requests, an effect sometimes known as *head-of-line blocking*
+
+Even if those subsequent requests are fast to process, the client will see a slow overall response time due to the time waiting for the prior request to complete, due to this it is important to measure response times on the client side
+
+When generating a load artifically in order to test the scalaility of a system, the load-generating client needs to keep sending requests indepedently of the response time
+
+If the client waits for the previous request to complete before sending the next one, that behaviour has the effect of artifically keeping the queues shorter in test than reality, which skews the measurement
+
