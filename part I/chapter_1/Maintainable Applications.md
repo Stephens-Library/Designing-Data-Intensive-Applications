@@ -54,3 +54,12 @@ For example, high-level programming languages are abstractions that hide machine
 SQL is an abstraction that hides complex on-disk and in-memory data structures, concurrent requests from other clients, and inconsistencies after crashes
 
 Of course, when programming in a high-level language, we are still using machine code, we are just not using it directly, because the programming language abstraction saves us from having to think about it
+
+## Evolvability: Making Change Easy
+It's extremely unlikely that your system's requirements will remain unchanged forever, they are much more likely to be in constant flux
+
+In terms of organizational process, *Agile* working patterns provide a framework for adapting to change
+
+Most dicussions of these Agile techniques focus on a fairly small, local scale, we will search for ways of increasing agility on the level of a larger data system, perhaps consisting of several different applications or services with different characteristics
+
+The ease with which you can modify a data system, and adapit it to changing requirements is closely linked to its simplicity and its abstractions: simple and easy-to-understand systems are usually easier to modify than complex ones, but since this is such an important idea, we will use a different word to refer to agility on a data system level: *evolvability*
