@@ -38,20 +38,20 @@ Hence there is a move towards a system that can tolerate the loss of entire mach
 - A system that can tolerate machine failure can be patched one node at a time, without downtime of the entire system
 
 ## Software Errors
-We usually think of hardware faults as being random and independent from each other: one machine's disk failing does not imply that another machine's disk is going to fail, there may be weeak correlations (common causes such as temperature), but otherwise it's very unlikely that a large number of hardware components fail at the same time
+We usually think of hardware faults as being random and independent from each other: one machine's disk failing does not imply that another machine's disk is going to fail, there may be weak correlations (common causes such as temperature), but otherwise, it's very unlikely that a large number of hardware components fail at the same time
 
 Another class of fault is a systematic error within the system, such faults are harder to anticipate because they are correlated across nodes, they tend to cause many more system failures, this inclues:
 - Software bugs that cause every instance of an application server to crash when given a particularly bad input
 - A runaway process that uses up some shared resource (CPU time, memory, disk space, network bandwidth)
-- Cascading failures, where a small fault in one component triggers a fault in another component, which trigger further faults
+- Cascading failures, where a small fault in one component triggers a fault in another component, which triggers further faults
 
 The bugs that cause these software faults lie dormant for a long time until they are triggered by an unusual set of circumstances
 
-There is no quick solution to the problem of systematic faults in software, thought lots of small things can help such as carefully thinking about assumptions and interactions in the system, thorough testing, process isolation, and allowing process to crash and restart
+There is no quick solution to the problem of systematic faults in software, though lots of small things can help such as carefully thinking about assumptions and interactions in the system, thorough testing, process isolation, and allowing the process to crash and restart
 
 ## Human Errors
-Human design and build software systems, and the operators who keep the systems running are also human, how do we ake our systems reliable, in spite of numerable unreliable humans? The best system combine several approaches
-- Design systems in a way that minimizes opportunities for error, for example well-designed abstractions, APIs, and admin interfaces make it easy to do "the right thing" and discourage "the wrong thing"
+Humans design and build software systems, and the operators who keep the systems running are also human, how do we make our systems reliable, despite numerous unreliable humans? The best system combines several approaches
+- Design systems in a way that minimizes opportunities for error, for example, well-designed abstractions, APIs, and admin interfaces make it easy to do "the right thing" and discourage "the wrong thing"
 - Decoupel the places where people make the most mistakes from the places where they can cause failures
 - Test thoroughly at all levels, from unit tests to whole-system integration tests and manual tests
 - Allow quick and easy recovery from human errors, to minimize the impact in the case of a failure
@@ -61,6 +61,6 @@ Human design and build software systems, and the operators who keep the systems 
 ## How Important is Reliability?
 Reliability is not just for nuclear power stations and air traffic control software
 
-More mundane applications are also expected to work reliably, bugs in business applications cause lost productivity and outages of ecommerce sites can have huge costs in terms of lost revenue and reputation damage
+More mundane applications are also expected to work reliably, bugs in business applications cause lost productivity and outages of e-commerce sites can have huge costs in terms of lost revenue and reputation damage
 
-There are situations in which we may choose to sacrifice reliability in order to reduce development costs (e.g when developing a prototype product for an unprovement market) or operational costs, but we should be very conscious when cutting corners
+There are situations in which we may choose to sacrifice reliability to reduce development costs (e.g when developing a prototype product for an unproven market) or operational costs, but we should be very conscious when cutting corners
