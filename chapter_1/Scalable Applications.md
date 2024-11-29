@@ -90,6 +90,8 @@ Once the load on your system has been described, you can investigate what happen
 1. When the load parameter increases and the system resources are unchanged (CPU, memory, bandwidth), how is the performance affected?
 2. When a load paramter is increased, how much must the resources increase to keep the performances unchanged
 
+*For clarification purposes, a load parameter is a factor that impacts the load of a system, not the actual load itself*
+
 Both questions require a performance numbers, so let's look briefly at describing the performance of the system
 
 In a batch processing system such as Hadoop, we care about *throughput*, the number of records we can process per second, or the total time it takes to run a job on a dataset of a certain size
@@ -140,3 +142,47 @@ When generating a load artifically in order to test the scalaility of a system, 
 
 If the client waits for the previous request to complete before sending the next one, that behaviour has the effect of artifically keeping the queues shorter in test than reality, which skews the measurement
 
+## Percentiles in Practice
+High percentiles are especially important in backend services that are called multiple times as part of serving a singe end-user request
+
+Even if you make the calls in parallel, the end-user request still needs to wait for the slowest of the parallel calls to complete
+
+The end-user request still needs to wait for the slowest of the parallel calls to complete, this effect is known as *tail letency amplification*
+
+If you want to add response time percentiles to the monitoring dashboards you need to efficiently calculate them on an ongoing basis, for example you may want to keep a rolling window of response time of requests in the last 10 minutes, every minute you calculate the median and various percentiles over the values in the winodw and plot those metrics on a graph
+
+The naive implementation is to keep a list of response times for all requests within the time window and to sort that list every minute
+
+If that is too inefficient, there are algorithms that can can calculate a good approximation of percentiles at minimal CPU and memory cost, such as forward decay, t-digest, or HdrHistogram
+
+Beware that averaging percentiles to reduce the time resolution or to combine data from several machines is mathematically meaningless, the right way of aggregating response time is to ad the histograms
+- Pecentiles are not averages, they are specific points in the data distribution, if you average the 95th percentiles of two datasets, the result is not necessary the actual 95th percentile of the combined data as this depends on the shape and size of the entire distribution
+
+## Approaches for Coping with Load
+How do we maintain good performance even when our load paramters increase by some amount?
+
+### Vertical vs Horizontal Scaling
+People often talk of a dichotomy between *scaling up* (*vertical scaling*, moving to a more powerful machine) and *scaling out* (*horizontal scaling*, distributing the load across multiple smaller machines)
+
+Distributing a load across multiple machines is also known as a *shared-nothing* architecture
+
+A system that can run on a single machine is often simpler, but high-end machines can become very expensive, so very intensive workloads often can't avoid scaling out
+
+In reality, good architectures usually involve a pragmatic mixture of approaches: for example, using several fairly powerful machines can still be simpler and cheaper than a large number of small virtual machines
+
+### Elastic Systems
+Some systems are elastic, meaning that they can automatically add computing resources when they detect a load increase, whearas other systems are scaled manually
+
+An elastic system can be useful if load is highly unpredictable, but manually scaled systems are simpler and have fewer operational expenses
+
+While distributing stateless services across multiple machines is a fairly straightforward task, taking a stateful data systems from a single node to a distributed setup can introduce a lot of additional complexity
+
+For this reason, common wisdom until recently was to keep your database on a single node until scaling cost or high-availability requirements force you to make it distributed
+
+*A **node** in this context is a physical or virtual machine, in distributed system nodes work together to perform tasks like storing data, handling requests, or running computations
+
+As the tools and abstractions for distributed systems get better, this common wisdom may change, at least from some kinds of applications
+
+The architecture of systems that operate at large scale is usually highly specific to the application, there is no such thing as a generic, one-size-fits-all scalable architecture (aka *magic scaling sauce*)
+
+The problem may be the volume of reads, the volume of writes, the volume of data to store, the complexity of the data, the response time requirements, the access patterns, or some mixture of all of these plus many more issues
