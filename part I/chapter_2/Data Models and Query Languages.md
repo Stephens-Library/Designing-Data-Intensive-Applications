@@ -34,4 +34,17 @@ Object databases came and went in the late 1980s and early 1990s, XML databases 
 
 As computers became vastly more powerful and networked, they started being used for increasingly diverse purposes
 
-And remarkably, relational databases turned out to generalize very well, beyond their original scope of business data processing, much it be online publishing, discussion, and social networking, e-commerce, games, and SAAS applications.
+And remarkably, relational databases turned out to generalize very well, beyond their original scope of business data processing, much it be online publishing, discussion, and social networking, e-commerce, games, and SAAS applications
+
+## The Birth of NoSQL
+Now, in the 2010s, NoSQL is the latest attempt to overthrow the relational model's dominance, the name "NoSQL" was originally a catchy Twitter hashtag, and has been retroactively reinterpreted as *Not Only SQL*
+
+There are several driving forces behind the adoption of NoSQL databases, including:
+- A need for greater scalability than relational databases can easily achieve, including very large databases or very high write throughput
+- A widespread preference for free and open source software over commercial database products
+- Specialized query operations that are not well supported by the relational model
+- Frustration with the restrictiveness of relational schemas, and a desire for a more dynamic and expressive data model
+
+Different applications have different requirements, and the best choice of technology for one use case may well be different from the best choice for another use case
+
+It therefore seems like that in the foreseeable future, relational databases will continue to be used alongside a broad variety of nonrelational datastores, an idea that is sometimes called *polygot persistence*
