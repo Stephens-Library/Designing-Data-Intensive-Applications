@@ -34,8 +34,8 @@ Good operability means making routine tasks easy, allowing the operations team t
 - Providing good support for automation and integration with standard tools
 - Avoiding dependency on individual machines
 - Providing good documentation and an easy-to-understand operational model
-- Providing good default behaviour, but also giving the adminstrators the freedom to override defaults when needed
-- Self-healing where appropriate, but also giving adminstrators manual control over the system state when needed
+- Providing good default behaviour, but also giving the administrators the freedom to override defaults when needed
+- Self-healing where appropriate, but also giving administrators manual control over the system state when needed
 - Exhibiting predictable behaviour, minimizing surprises
 
 ## Simplicity: Managing Complexity
@@ -60,6 +60,6 @@ It's extremely unlikely that your system's requirements will remain unchanged fo
 
 In terms of organizational process, *Agile* working patterns provide a framework for adapting to change
 
-Most dicussions of these Agile techniques focus on a fairly small, local scale, we will search for ways of increasing agility on the level of a larger data system, perhaps consisting of several different applications or services with different characteristics
+Most discussions of these Agile techniques focus on a fairly small, local scale, we will search for ways of increasing agility on the level of a larger data system, perhaps consisting of several different applications or services with different characteristics
 
-The ease with which you can modify a data system, and adapit it to changing requirements is closely linked to its simplicity and its abstractions: simple and easy-to-understand systems are usually easier to modify than complex ones, but since this is such an important idea, we will use a different word to refer to agility on a data system level: *evolvability*
+The ease with which you can modify a data system, and adapt it to changing requirements is closely linked to its simplicity and its abstractions: simple and easy-to-understand systems are usually easier to modify than complex ones, but since this is such an important idea, we will use a different word to refer to agility on a data system level: *evolvability*

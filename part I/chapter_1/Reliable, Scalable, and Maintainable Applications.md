@@ -40,13 +40,13 @@ The client requests come through an API and now, the juicy stuff! There are four
 
 3. Handling search request
     - The query forwarded to the full-text index (Elastisearch, Apache Solr)
-    - First, the query is split into individual tokens and stopwords are removed
+    - First, the query is split into individual tokens and stop-words are removed
     - The full-text search engine looks up the tokens in its inverted index and "fuzzy matches" against the data
     - Returns the data
 
 4. Handling Asynchronous Tasks
     - Task is added as a "message" to the message queue (RabbitMQ, Apache Kafka, Amazon SQS)
-    - The message queue stores the message until a consumer/worker process (Celery, Buill, Amazon Lambda, Apache Airflow Workers) is ready to process it
+    - The message queue stores the message until a consumer/worker process (Celery, Bull, Amazon Lambda, Apache Airflow Workers) is ready to process it
     - A worker service retrieves the message from the queue and the task is executed
     - Once the task is executed, the worker sends an acknowledgement to the queue and the message is removed
     - If the worker fails to process the message, the queue can

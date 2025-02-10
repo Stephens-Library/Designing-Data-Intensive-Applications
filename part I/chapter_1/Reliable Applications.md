@@ -40,7 +40,7 @@ Hence there is a move towards a system that can tolerate the loss of entire mach
 ## Software Errors
 We usually think of hardware faults as being random and independent from each other: one machine's disk failing does not imply that another machine's disk is going to fail, there may be weak correlations (common causes such as temperature), but otherwise, it's very unlikely that a large number of hardware components fail at the same time
 
-Another class of fault is a systematic error within the system, such faults are harder to anticipate because they are correlated across nodes, they tend to cause many more system failures, this inclues:
+Another class of fault is a systematic error within the system, such faults are harder to anticipate because they are correlated across nodes, they tend to cause many more system failures, this includes:
 - Software bugs that cause every instance of an application server to crash when given a particularly bad input
 - A runaway process that uses up some shared resource (CPU time, memory, disk space, network bandwidth)
 - Cascading failures, where a small fault in one component triggers a fault in another component, which triggers further faults
@@ -52,7 +52,7 @@ There is no quick solution to the problem of systematic faults in software, thou
 ## Human Errors
 Humans design and build software systems, and the operators who keep the systems running are also human, how do we make our systems reliable, despite numerous unreliable humans? The best system combines several approaches
 - Design systems in a way that minimizes opportunities for error, for example, well-designed abstractions, APIs, and admin interfaces make it easy to do "the right thing" and discourage "the wrong thing"
-- Decoupel the places where people make the most mistakes from the places where they can cause failures
+- Decouple the places where people make the most mistakes from the places where they can cause failures
 - Test thoroughly at all levels, from unit tests to whole-system integration tests and manual tests
 - Allow quick and easy recovery from human errors, to minimize the impact in the case of a failure
 - Set up detailed and clear monitoring such as performance metrics and error rates, in other engineering disciplines this is referred to as "telemetry"
