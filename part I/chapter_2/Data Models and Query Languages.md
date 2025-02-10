@@ -48,3 +48,10 @@ There are several driving forces behind the adoption of NoSQL databases, includi
 Different applications have different requirements, and the best choice of technology for one use case may well be different from the best choice for another use case
 
 It therefore seems like that in the foreseeable future, relational databases will continue to be used alongside a broad variety of nonrelational datastores, an idea that is sometimes called *polygot persistence*
+
+## The Object-Relational Mismatch
+Most application development today is done in OOP languages, which leads to a common criticism of the SQL model, if the data is stored in relational tables, an awkward translation layer is required between the objects in the application code and the database model, this disconnect between the models is sometimes called *impedance mismatch*
+
+Object-relational mapping (ORM) frameworks like ActiveRecord and Hibernate reduce the amount of boilerplate code required for this translation layer, but they can't completely hid the differences between the two models
+
+For example, a resume on LinkedIn illustrates that 
