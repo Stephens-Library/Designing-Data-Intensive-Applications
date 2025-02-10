@@ -16,3 +16,22 @@ Some operations are fast and some perform badly; some data transformations feel 
 Building software is hard enough, even when working with just one data model and without worrying about its inner workings, but since the data model has such a profound effect on what the software above it can and can't do, it's important to choose one that is appropriate to the application
 
 We will look at a range of general-purpose data models for data storage and querying, in particular we will compare the relational data model, the document model, and a few graph based data models, in the next chapter we will discuss how storage engines work; that is, how these data models are actually implemented
+
+## Relational Model Versus Document Model
+The best-known data model today is probably that of SQL, based on the relational model proposed by Edgar Codd in 1970: data is organized into *relations* (called *tables* in SQL) where each relation is an unordered collection of *tuples* (*rows* in SQL)
+
+The relational model was a theoretical proposal, and many people at the time doubted whether it could be implemented efficiently
+
+However, by the mid-1980s, relational database management systems (RDBMSes) and SQL had become the tools of choice for most people who needed to store and query data with some kind of regular structure
+
+The roots of relational databases lie in *business data processing*, which was performed on mainframe computers in the 1960s and '70s, the use cases appear mundane from today's perspective: typically *transaction processing* and *batch processing* (customer invoicing, payroll, reporting)
+
+Other databases at that time forced application developers to think a lot about the internal representation of the data in the database, the goal of the relational model was to hide that implementation behind a cleaner interface
+
+Over the years, there have been many competing approaches to data storage and querying, in the 1970s and early 1980s, the *network model* and the *hierachical model* were the main alternatives but the relational model came to dominate them
+
+Object databases came and went in the late 1980s and early 1990s, XML databases appeared in the early 2000s, but have only seen niche adoption, each competitor to the relational model generated a lot of hype in its time, but it never lasted
+
+As computers became vastly more powerful and networked, they started being used for increasingly diverse purposes
+
+And remarkably, relational databases turned out to generalize very well, beyond their original scope of business data processing, much it be online publishing, discussion, and social networking, e-commerce, games, and SAAS applications.
