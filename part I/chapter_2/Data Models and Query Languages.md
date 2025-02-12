@@ -54,4 +54,43 @@ Most application development today is done in OOP languages, which leads to a co
 
 Object-relational mapping (ORM) frameworks like ActiveRecord and Hibernate reduce the amount of boilerplate code required for this translation layer, but they can't completely hid the differences between the two models
 
-For example, a resume on LinkedIn illustrates that 
+For example, we will try to illustrate how a resume could be expressed in a relational schema. The first profile as a whole can be identified by a unique identifier, `user_id`. Fields like `first_name` and `last_name` appear exactly once per user, so they can be modeled as columns on the `users` table
+
+However, most people have had more than one job in their career, and people may have varying number of pieces of contact information
+
+There is a one-to-many relationship from the users to these items, which can be represented various ways:
+- In the traditional SQL model, the most common normalized representation is to put positions, education, and contact information in separate tables, with a foreign key reference to the `users` table
+- Later versions of the SQL standard added support for structured data types and XML data, this allowed multi-valued data to be stored within a single row, with support for querying and indexing inside those documents, these features are supported to varying degrees by Oracle, IBM, DB2, MS SQL Server, and PostgreSQL. A JSON datatype is also supported by several databases including IBM DB2, MySQL, and PostgreSQL
+- A third option is to encode jobs, education, and contact info as a JSON or XML document, store it on a text 
+
+For a data structure like a resume, which is mostly a self-contained `document`, a JSON representation can be quite appropriate , JSON has the appeal of being much simpler than XML, JSON has the appeal of being much simpler than XML, document-oriented databases like MongoDB, RethinkDB, CouchDB, and Espresso support this data model
+
+```json
+{
+    "user_id": 251,
+    "first_name": "Bill",
+    "last_name": "Gates",
+    "summary": "Co-chair of the Bill & Melinda  Gates... Active blogger.",
+    "region_id": "us:91",
+    "industry_id": 131,
+    "photo_url": "/p/7/000/253/05b/308dd6e.jpg",
+    "positions": [
+        {"job_title": "Co-chair", "organization": "Bill & Melinda Gates Foundation"},
+        {"job_title": "Co-founder, Chairman", "organization": "Microsoft"}
+    ],
+    "education": [
+        {"school_name": "Harvard University", "start": 1973, "end": 1975},
+        {"school_name": "Lakeside School, Seattle", "start": null, "end": null}
+    ],
+    "contact_info": {
+        "blog": "http://thegatesnotes.com",
+        "twitter": "http://twitter.com/BillGates"
+    }
+}
+```
+
+Some developers feel that the JSON model reduces the impedance mismatch between the application code and the storage layer
+
+However, as we shall see in Chapter 4 (Encoding and Evolution) there are also problems with JSON as a data encoding format
+
+The lack of a schema is often cited as an a
