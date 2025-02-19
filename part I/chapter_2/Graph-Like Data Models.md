@@ -200,3 +200,59 @@ _:namerica :type "continent".
 In this example, vertices of the graph are written as `_:someName`, the name doesn't mean anything outside of this file, it exists only because we otherwise wouldn't know which triples refer to the same vertex
 
 When the predicate represents an edge, the object is a vertex, as in `_:idaho :within _:usa`, when the predicate is property, the object is a string literal, as in `_:usa :name "United States"`
+
+## The Semantic Web
+If you read more about triple-stores, you may get sucked into a maelstrom of articles written about the `semantic web`
+
+The triple-store data model is completely independent of the semantic web, for example Datomic is a triple-store that does not claim to have anything to do with it
+
+The semantic web is fundamentally a simple and reasonable idea: websites already publish information as text and pictures for humans to read, so why don't they also publish information information as machine-readable data for computers to read?
+
+The *Resource Description Framework* (RDF) was intended as a mechanism for different websites to publish data in a consistent format, allowing data from different websites to be automatically combined into a *web of data* a kind of internet-wide "database of everything"
+
+Unfortunately the semantic web was over-hyped in the early 2000s but so far hasn't shown any sign of being realized in practice
+
+## The RDF Data Model
+The Turtle language we used is a human-readable format for RDF data, sometimes RDF is also written in XML format, which does the same thing much more verbosely
+
+Turtle/N3 is preferable as it is much easier on the eyes and tools like Apache Jena can automatically convert between different RDF formats if necessary
+
+```xml
+<rdf:RDF xmlns="urn:example:"
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <Location rdf:nodeID="idaho">
+        <name>Idaho</name>
+        <type>state</type>
+        <within>
+            <Location rdf:nodeID="usa">
+            <name>United States</name>
+            <type>country</type>
+            <within>
+                <Location rdf:nodeID="namerica">
+                    <name>North America</name>
+                    <type>continent</type>
+                </Location>
+            </within>
+            </Location>
+        </within>
+    </Location>
+
+    <Person rdf:nodeID="lucy">
+    <name>Lucy</name>
+    <bornIn rdf:nodeID="idaho"/>
+    </Person>
+</rdf:RDF>
+```
+*The data above expressed using RDF/XML syntax*
+
+RDF has a few quirks due to the fact that it is designed for internet-wide data exchange
+
+The subject, predicate, and object of a triple are often URIs, for example a predicate might be an URI such as `<http://my-company.com/namespace#within>` or `<http://my-company.com/namespace#lives_in>`, rather than just `WITHIN` or `LIVES_IN`
+
+The reasoning behind this design is that you should be able to combine your data with someone else's data, and if they attach a different meaning to the word `within` or `lives_in`, you won't get a conflict because their predicates are actually `<http://other.org/foo#within>` and `<http://other.org/foo#lives_in>`
+
+The URL `<http://my-company.com/namespace>` doesn't necessarily need to resolve to anything, from RDF's point of view, it is simply a namespace
+
+To avoid potential confusion with `https://URLs` the examples in this section use non-resolvable URIs such as `urn:example:within`
+
+Fortunately, you can just specify this prefix once at the top of the file, and then forget about it
