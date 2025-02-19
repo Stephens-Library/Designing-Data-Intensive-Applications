@@ -349,3 +349,29 @@ We define *rules* that tell the database about new predicates: here, we define t
 Rules can refer to other rules, just like functions can call other functions or recursively call themselves, like this, complex queries can be built up a small piece at a time
 
 The Datalog approach requires a different kind of thinking to the other query languages discussed in this chapter, it's less convenient for simple one-off queries, but it can cope better if your data is complex
+
+## Summary
+Data models are a huge subject, and in this chapter we have taken a quick look at a broad variety of different models
+
+Historically, data started out being represented as one big tree (the hierarchical model) but that wasn't good for representing many-to-many relationships, so the relational model was invented to solve that problem
+
+New nonrelational "NoSQL" databases have diverged into two main directions:
+1. **Document databases**: Target use cases where data comes in self-contained documents and relationships between one document and another are rare
+2. **Graph databases**: Go in the opposite direction, targeting use cases where anything is potentially related to everything
+
+All three models (document, relational, and graph) are widely used today, and each is good in its respective domain
+
+One model can be emulated in terms of another model, but the result is often awkward, that's why we have different systems for different purposes, not a single one-size-fits-all solution
+
+One thing that document and graph databases have in common is that they typically don't enforce a schema for the data they store, however your application most likely still assumes that data has a certain structure, it's just a question of whether the schema is explicit (enforced on write) or implicit (enforced on read)
+
+Each data model comes with its own query language or framework, we discussed several examples: SQL, MapReduce, MongoDB's aggregation pipeline, Cypher, SPARQL, and Datalog
+
+We also touched on CSS and XSL/XPath which aren't database query languages but have interesting parallels
+
+Although we covered a lot, there are many data models left unmentioned here are a few examples:
+- Researches working with genome data often need to perform *sequence similarity searches* which means taking on every long string and matching it against a large database of strings that are similar, but not identical, none of the databases described here can handle this kind of usage, which is why researchers have written specialized genome database software like GenBank
+- Particle physicists have been doing big Data-style large-scale data analysis for decades, and projects like Large Hadron Collider (LHC) now work with hundreds of petabytes, a custom solution is required to stop the hardware cost from spiraling out of control
+- *Full-text search* is arguably kind of a data model that is frequently used alongside databases, information retrieval is a large specialist subject that won't be detailed in this book, but we'll touch on search indexes in Chapter 3 and Part III
+
+In the next chapter, we will discuss some of the trade-offs that come into play when *implementing* data models described in this chapter!
