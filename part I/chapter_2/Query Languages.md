@@ -31,3 +31,81 @@ Finally, declarative languages often lend themselves to parallel execution, toda
 Declarative languages have a better chance of getting faster in parallel execution because they specify only the pattern of the results, not the algorithm that is used to determine the results
 
 The database is free to use a parallel implementation of the query language if appropriate
+
+## MapReduce Querying
+*MapReduce* is a programming model for processing large amounts of data in bulk across many machines, popularizes by Google
+
+A limited form of MapReduce is supported by some NoSQL datastores, including MongoDB and CouchDB as a mechanism for performing read-only queries across many documents
+
+MapReduce is neither a declarative query language nor a fully imperative query API, but somewhere in between: the logic of the query is expressed with snippets of code, which are called repeatedly by the processing framework
+
+It is based on `map` (also known as `collect`) and `reduce` (also known as `fold` or `inject`) functions that exist in many functional programming languages
+
+Say you are a marine biologist and you add an observation record to your database every time you see animals in the ocean, now you want to generate a report saying how many sharks you have sighted per month
+
+In PostgreSQL you might express that query like this
+```SQL
+SELECT date_trunc('month', observation_timestamp) AS observation_month,
+    sum(num_animals) AS total_animals
+FROM observations
+WHERE family = 'Sharks'
+GROUP BY observation_month;
+```
+The `date_trunc('month', timestamp)` function determines the calendar month containing `timestamp` and returns another timestamp representing the beginning of that month, in other words it rounds a timestamp down to the nearest month
+
+1. This query first filters the observations to only show specifies in the `Sharks` family
+2. Then it groups the observations by the calendar month in which they occurred
+3. It adds up the number of animals seen in all observations in that month
+
+This can be expressed with MongoDB's MapReduce feature as follows:
+```javascript
+db.observations.mapReduce(
+    function map() {
+        var year = this.observationTimestamp.getFullYear();
+        var month = this.observationTimestamp.getMonth() + 1;
+        emit(year + "-" + month, this.numAnimals);
+    },
+        function reduce(key, values) {
+        return Array.sum(values);
+    },
+    {
+        query: { family: "Sharks" },
+        out: "monthlySharkReport"
+    }
+);
+```
+1. The filter to consider only shark species can be specified declaratively (this is a MongoDB-specific extension to MapReduce)
+2. The JavaScript function `map` is called once for every document that matches `query`, with `this` set to the document object
+3. The `map` function emits a key (a string consisting of year and month, such as "2013-12" or "2014-1") and a value (the number of animals in that observations)
+4. The key-value pairs emitted by `map` are grouped by key, for all key-value pairs with the same key, the `reduce` function is called once
+5. The `reduce` function adds up the number of animals from all observations in a particular month
+6. The final output is written to the collection `monthlySharkReports`
+
+The `map` and `reduce` functions are somewhat restricted in what they are allowed to do
+
+First, they must be *pure* functions, which means they only use the data that is passed to them as input, they cannot perform additional database queries, and they **must not** have any side effects
+
+*side effects are any observable change in the state of the system that occurs as a result of executing a function or expression beyond just returning a value*
+
+These restrictions allow the database to run the functions anywhere, in any order, and rerun them on failure, however, they are nevertheless powerful: they can parse strings, call library functions, perform calculations, and more
+
+A usability problem with MapReduce is that you have to write two carefully coordinated JavaScript functions, which is often harder than writing a single query, moreover, a declarative query language offers more opportunities for a query optimizer to improve the performance of a query
+
+For these reasons, MongoDB 2.2 added support for a declarative query language called the **aggregation pipeline** in this language, the same shark-counting query looks like this
+
+```javascript
+db.observations.aggregate([
+    { $match: { family: "Sharks" }},
+    { $group: {
+        _id: {
+            year: { $year: "$observationTimestamp" }.
+            month: { $month: "observationTimestamp" }
+        },
+        totalAnimals: { $sum: "$numAnimals"}
+    }}
+])
+```
+
+The aggregation pipeline language is similar in expressiveness to a subset of SQL, but it uses a JSON-based syntax rather than SQL's English-sentence-style syntax
+
+Moral of the story is that a NoSQL system may find itself accidentally reinventing SQL in disguise 
