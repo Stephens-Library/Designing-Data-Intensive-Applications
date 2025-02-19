@@ -111,3 +111,59 @@ There are several possible ways of executing the query, the description given he
 But equivalently, you could start with the two `Location` vertices and work backward, if there is an index on the `name` property, you can probably efficiently find the two vertices representing the US and Europe, then you can proceed to find all locations (states, regions, cities, etc) in the US and Europe respectively by following all incoming `WITHIN` edges, and finally you can look for people who can be found through incoming `BORN_IN` or `LIVES_IN` edge at one of the location vertices
 
 As is typical for a declarative query language, you don't need to specify such execution details when writing the query: the query optimizer automatically chooses the strategy that is predicted to be the most efficient, so you can get on with writing the rest of your application
+
+## Graph Queries in SQL
+As seen above where re represented the graph data with a relational schema one might ask, can we also query it using SQL?
+
+The answer is yes, we can, but with difficulty. In a relational database, you usually know in advance which joins you need in your query, in a graph query you may need to traverse a variable number of edges before you find the vertex you're looking for, that is the number of joins is not fixed in advance
+
+Hence we use the Cypher operator `:WITHIN*0..` which expresses very concisely follow a `WITHIN` edge zero or more times, similar to `*` in a regex, this is because `LIVES_IN` may point to a city that points to a state within the US or it could point to the US directly
+
+Since SQL:1999 this idea of variable-length traversal paths in a query can be expressed using something called `recursive common table expressions` (the `WITH RECURSIVE` syntax), below is the same query in SQL, but the syntax is clumsy compared to Cypher
+```sql
+WITH RECURSIVE
+    -- in_usa is the set of vertex IDs of all locations within the United States
+    in_usa(vertex_id) AS (
+        SELECT vertex_id FROM vertices WHERE properties->>'name' = 'United States'
+        UNION
+        SELECT edges.tail_vertex FROM edges
+        JOIN in_usa ON edges.head_vertex = in_usa.vertex_id
+        WHERE edges.label = 'within'
+    ),
+    -- in_europe is the set of vertex IDs of all locations within Europe
+    in_europe(vertex_id) AS (
+        SELECT vertex_id FROM vertices WHERE properties->>'name' = 'Europe'
+        UNION
+        SELECT edges.tail_vertex FROM edges
+        JOIN in_europe ON edges.head_vertex = in_europe.vertex_id
+        WHERE edges.label = 'within'
+    ),
+    -- born_in_usa is the set of vertex IDs of all people born in the US
+    born_in_usa(vertex_id) AS (
+        SELECT edges.tail_vertex FROM edges
+        JOIN in_usa ON edges.head_vertex = in_usa.vertex_id
+        WHERE edges.label = 'born_in'
+    ),
+    -- lives_in_europe is the set of vertex IDs of all people living in Europe
+        lives_in_europe(vertex_id) AS (
+        SELECT edges.tail_vertex FROM edges
+        JOIN in_europe ON edges.head_vertex = in_europe.vertex_id
+        WHERE edges.label = 'lives_in'
+    )
+
+SELECT vertices.properties->>'name'
+FROM vertices
+-- join to find those people who were both born in the US *and* live in Europe
+JOIN born_in_usa ON vertices.vertex_id = born_in_usa.vertex_id
+JOIN lives_in_europe ON vertices.vertex_id = lives_in_europe.vertex_id;
+```
+
+1. First find the vertex whose `name` property has the value `"United States"`, and make it the first element of the set of vertices `in_usa`
+2. Follow all incoming `within` edges from `vertices` in the set `in_usa` and add them to the same set, until all incoming `within` edges have been visited
+3. Do the same starting with the vertex whose `name` property has the value `"Europe"` and build up the set of vertices `in_europe`
+4. For each of the vertices in the set `in_usa` follow incoming `born_in` edges to find people who were born in some place within the United States
+5. For each of the vertices in the set `in_europe` follow incoming `lives_in` edges to find people who live in Europe
+6. Intersect the set of people born in the USA with the set of people living in Europe by joining them
+
+If the same query can be written in 4 lines in one query language but requires 29 lines in another, that just shows that different data models are designed to satisfy different use cases
+
