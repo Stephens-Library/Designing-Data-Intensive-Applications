@@ -122,3 +122,92 @@ The advantage of using an ID is that because it has no meaning to humans it neve
 Anything that is meaningful to humans may need to change sometime in the future, and if that information is duplicated, all the redundant copies need to be updated
 
 That incurs write overheads, and risks inconsistencies, removing such duplication is the key idea behind *normalization* in databases
+
+Unfortunately, normalizing this data requires *many-to-one* relationships (many people live in one particular region, many people work in one particular industry), which don't fit nicely into a document model
+
+In relational databases, it's normal to refer to rows ijn other tables by ID, because joins are easy, in document databases, joins are not needed for one-to-many tree structures and support for joins is often weak
+
+If the database itself does not support joins, you have to emulate a join in application code by making multiple queries to the database, in this case the lists of regions and industries are probably small and slow-changing enough that the application can simply keep them in memory
+
+Moreover, even if the initial version of an application fits well in a join-free document model, data has a tendency of becoming more interconnected as features are added to applications, for example consider some changes we could make to the resume example
+
+![image](<photos/many_to_many.png>)
+This figure illustrates an example of a many-to-many relationship. Here, everything within the dotted rectangle can be grouped into one document, but the references to organizations, schools, and others need to be references with joins
+
+One user can have many positions and one organization may have many users
+
+## Are Document Databases Repeating History?
+While many-to-many relationships and joins are routinely used in relational databases, document databases, and NoSQL reopened the debate on how best to represent such relationships, this debate is much older than NoSQL
+
+The design of IMS used a fairly simple data model called the *hierarchical model*, which has some remarkable similarities to the JSON model used by document databases, it represented all data as a tree of records nested within records, much like the JSON structure
+
+Like document databases, IMS worked well for one-to-many relationships, but it made many-to-many relationships difficult, and it didn't support joins
+
+Developers had to decide whether to duplicate data (denormalize) or to manually resolve references from one record to another, these problems of the 1960s and '70s were very much like the problems that developers are running into with document databases today
+
+Various solutions were proposed to solve the limitations of the hierarchical model, the two most prominent were the *relational model* which became SQL and took over the world and the *network model* which initially had a large following but faded into obscurity
+
+Since the problem that the two models were solving is still so relevant today, it's worth briefly revisiting this debate today's light
+
+### The Network Model
+In the tree structure of the hierarchical model, every record has exactly one parent, in the network model a record could have multiple parents, for example, there could be one record for the "Greater Seattle Area" region, and every user who lived in that region could be linked to it
+
+This allowed many-to-one and many-to-many relationships to be modelled, the links between records in the network model were not foreign keys, but more like pointers in a programming language
+
+The only way of accessing a record was to follow a path from a root record along these chains of links this was called the *access path*
+
+In the simplest case, an access path could be like the traversal of a linked list, but in a world of many-to-many relationships, several different paths can lead to the same record and a programmer working with the network model had to keep track of these different access paths in their head
+
+![image](<photos/network_model.png>)
+*This figure is an example of a network model*
+
+### The Relational Model
+What the relational model did, by contrast, was to lay out all the data in the open: a relation (table) is simply a collection of tuples (rows) and that's it
+
+There are no complicated access paths to follow if you want to look at the data, you can read any or all of the rows in a table, selecting those that match an arbitrary condition
+
+You can read a particular row by designating some columns as a key and matching on those, you can insert a new row into any table without worrying about foreign key relationships to and from other tables
+
+In a relational database, the query optimizer automatically decides which parts of the query to execute in which order and which indexes to use, those choices are effectively the "access path", but the big difference is that they are made automatically by the query optimizer, not by the application developer, so we rarely need to think about them
+
+#### Comparison to Document Databases
+Document databases reverted back to the hierarchical model in one aspect: storing nested records within their parent record rather than in a separate table
+
+However, when it comes to representing many-to-one and many-to-many relationships, relational and document databases are not fundamentally different, in both cases the related item is referenced by a unique identified, a *foreign key* in the relational model to refer to records in another table and a *document reference* in the document model to refer to other documents
+
+That identifier is resolved at read time by using a join or follow-up queries, to date document models have not followed the path of CODASYL
+
+## Relational Versus Document Databases Today
+There are many differences to consider when comparing relational to document databases such as fault-tolerance properties and handling of concurrency, in this chapter we will concentrate only on the differences in the data model
+
+The main arguments in favor of the document data model are schema flexibility, better performance due to locality, and that for some applications, it is closer to the data structures used by the application, the relational model counters by providing better support for joins and many-to-one and many-to-many relationships
+
+### Deep Dive on Locality
+Okay so we hear locality a lot but what does it actually mean?
+
+Locality in this context refers to how data that's accessed together is stored close together in memory or on disk, this proximity can affect the performance because accessing nearby data (spatial locality) or re-accessing recently accessed data (temporal locality) is typically much faster
+
+In a relational database, the data is typically normalized, which means a user's basic info might be in on table, their orders in another, and their addresses in yet another table, when you need to gether all related information the database performs joins across multiple tables which lead to accessing data that is stored in different parts of the disk or memory, reducing the benefits of spatial locality
+
+Document databases often store related data together in one document, maximizing spatial locality for faster, more efficient read operations
+
+### Which Data Model Leads to Simpler Application Code
+If the data in your application has a document-like structure (i.e a tree of one-to-many relationships, where typically the entire tree is loaded at once), then it's probably a good idea to use a document model, the relational technique of *shredding* (splitting a document-like structure into multiple tables) can lead to cumbersome schemas and unnecessarily complicated application code
+
+The document model has limitations: for example, you cannot refer directly to a nested item within a document, but instead you need to say something like "the second item int he list of positions for user 251", however as long as documents are not too deeply nested, that is not actually a problem
+
+The poor support for joins in the document databases may or may not be a problem, depending on the application, for example many-to-many relationships may never be needed in an analytics application that uses a document database to record which events occurred at which time
+
+However, if your application does use many-to-many relationships, the document model becomes less appealing, it's possible to reduce the need for joins by denormalizing, but the application code needs to do additional work to keep the denormalized data consistent, joins can be emulated by making multiple database requests in the application code and is usually slower than a join performed by a specialized code inside the database
+
+### Schema Flexibility in the Document Model
+Document databases are often called "schemaless" because they don't enforce a strict schema at write time, allowing arbitrary keys and values, however applications typically assume an implicit structure (schema-on-read), unlike relational databases which enforce an explicit schema (schema-on-write)
+
+With document databases, if you need to change the data format, you can simply start writing new documents with the new fields and handle older formats at read time, in a relational database, schema changes typically require migrations that is something like
+```sql
+ALTER TABLE users ADD COLUMN first_name text;
+UPDATE users SET first_name = split_part(name, ' ', 1); -- PostgreSQL
+```
+Which can be done quickly on many systems, but may involve downtime or slower operations on large tables
+
+The debate between schema enforcement methods reflect trade-offs between flexibility and consistency, and there is no one-size-fits-all answer
