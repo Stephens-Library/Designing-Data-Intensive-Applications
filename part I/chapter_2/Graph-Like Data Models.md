@@ -68,3 +68,46 @@ CREATE INDEX edges_heads ON edges (head_vertex);
 3. By using different labels for different kinds of relationships, you can store several different kinds of information in a single graph while still maintaining a clean data model
 
 Graphs are good for evolvability, as you add features to your application, a graph can easily be extended to accommodate changes in your application's data structures
+
+## The Cypher Query Language
+*Cypher* is a declarative query language for property graphs, created for the *Neo4j* graph database
+```sql
+CREATE
+    (NAmerica:Location {name:'North America', type:'continent'}),
+    (USA:Location {name:'United States', type:'country' }),
+    (Idaho:Location {name:'Idaho', type:'state' }),
+    (Lucy:Person {name:'Lucy' }),
+    (Idaho) -[:WITHIN]-> (USA) -[:WITHIN]-> (NAmerica),
+    (Lucy) -[:BORN_IN]-> (Idaho)
+```
+This shows the Cypher query language to insert the left hand portion of the non-homogenous graph above into a graph database
+![image](<photos/non-homogenous_graph.png
+Each vertex is given a symbolic name like `USA` or `Idaho` and other parts of the query can use those names to create edges between the vertices, using an arrow notation: `(Idaho) -[:WITHIN]-> (USA)` creates an edge labeled `WITHIN`, with `Idaho` as the tail node and `USA` as the head node
+
+When all the vertices and edges are added to the database, we can start asking interesting questions: for example, *find the names of all the people who emigrated from the United States to Europe*
+
+To be more precise, here we want to find all the vertices that have a `BORN_IN` edge to a location within the `US` but also a `LIVING_IN` edge to a location within Europe, and return the `name` property of each of those vertices
+
+Below is the following Cypher query:
+```sql
+MATCH
+    (person) -[:BORN_IN]-> () -[:WITHIN*0..]-> (us:Location {name:'United States'}),
+    (person) -[:LIVES_IN]-> () -[:WITHIN*0..]-> (eu:Location {name:'Europe'})
+RETURN person.name
+```
+Here the same arrow notation is used in a `MATCH` clause to find patterns in the graph
+
+The query can be read as follows:
+Find any vertex that meets *both* of the following conditions
+1. `person` has an outgoing `BORN_IN` edge to some vertex, from that vertex you can follow a chain of outgoing `WITHIN` edges until eventually you reach a vertex of type `Location`, whose `name` property is equal to `United States`
+2. That same `person` vertex also has an outgoing `LIVES_IN` edge following that edge and then a chain of outgoing `WITHIN` edges, you eventually reach a vertex of type `lLocation` whose `name` property is equal to "Europe"
+
+For each such `person` vertex, return the `name` property
+
+*note: \*0.. means 0 or more hops, the number of hops is the number of jumps you have to make in order to get to the specified data, 0 hopes for example would mean no relationship is traversed at all and the node you're already at must be a `Location` with the name `United States` there's no next node*
+
+There are several possible ways of executing the query, the description given here suggests that you start by scanning all the people in the database, examine each person's birthplace and residence, and return only those people who meet the criteria
+
+But equivalently, you could start with the two `Location` vertices and work backward, if there is an index on the `name` property, you can probably efficiently find the two vertices representing the US and Europe, then you can proceed to find all locations (states, regions, cities, etc) in the US and Europe respectively by following all incoming `WITHIN` edges, and finally you can look for people who can be found through incoming `BORN_IN` or `LIVES_IN` edge at one of the location vertices
+
+As is typical for a declarative query language, you don't need to specify such execution details when writing the query: the query optimizer automatically chooses the strategy that is predicted to be the most efficient, so you can get on with writing the rest of your application
