@@ -167,3 +167,36 @@ JOIN lives_in_europe ON vertices.vertex_id = lives_in_europe.vertex_id;
 
 If the same query can be written in 4 lines in one query language but requires 29 lines in another, that just shows that different data models are designed to satisfy different use cases
 
+## Triple-Stores and SPARQL
+The triple-store model is mostly equivalent to the property graph model, using different words to describe the same ideas, it is nevertheless worth discussing, because there are various tools and languages for triple-stores that can be valuable additions to your toolbox for building applications
+
+In a triple-store, all information is stored in the form of very simple three-part statements (subject, predicate, object)
+
+For example, in the triple (Jim, likes, bananas), Jim is the subject, likes is the predicate, and bananas is the object
+
+The subject of a triple is equivalent to a vertex in a graph, the object is one of two things
+
+1. A value in a primitive datatype, such as a string or a number, in that case the predicate and object of the triple are equivalent to the key and value of a property on the subject vertex, for example `(lucy, age, 33)` is like a vertex `lucy` with properties `{"age": 33}`
+2. Another vertex in the graph, in that case the predicate in an edge in the graph, the subject is the tail vertex, and the object is the head vertex, for example in `(lucy, marriedTo, alain)` the subject and object `lucy` and `alain` are both vertices, and the predicate `marriedTo` is the label of the edge that connects them
+```
+@prefix : <urn:example:>.
+_:lucy a :Person.
+_:lucy :name "Lucy".
+_:lucy :bornIn _:idaho.
+_:idaho a :Location.
+_:idaho :name "Idaho".
+_:idaho :type "state".
+_:idaho :within _:usa.
+_:usa a :Location.
+_:usa :name "United States".
+_:usa :type "country".
+_:usa :within _:namerica.
+_:namerica a :Location.
+_:namerica :name "North America".
+_:namerica :type "continent".
+```
+*This shows the same data written as triples in a format called Turtle, a subset of Notation3*
+
+In this example, vertices of the graph are written as `_:someName`, the name doesn't mean anything outside of this file, it exists only because we otherwise wouldn't know which triples refer to the same vertex
+
+When the predicate represents an edge, the object is a vertex, as in `_:idaho :within _:usa`, when the predicate is property, the object is a string literal, as in `_:usa :name "United States"`
