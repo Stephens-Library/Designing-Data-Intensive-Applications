@@ -109,3 +109,15 @@ db.observations.aggregate([
 The aggregation pipeline language is similar in expressiveness to a subset of SQL, but it uses a JSON-based syntax rather than SQL's English-sentence-style syntax
 
 Moral of the story is that a NoSQL system may find itself accidentally reinventing SQL in disguise 
+
+### My Explanation on MapReduce
+My explanation of MapReduce: It's basically a programming model designed to process large datasets by breaking the task into two distinct phases:
+1. Map phase: The purpose is to process input data and transform it into a set of intermediate key-value pairs, each item is independently processed by a "map" function, this function `emits` key-value pairs based on the logic you provide
+
+The framework then groups all values by their keys, this means each key becomes associated with a **list** of values whom share that key
+
+2. Reduce phase: The purpose is to aggregate or summarize the intermediate key-value pairs produced by the map function, for each unique key the "reduce" function receives an array of values and combined them (e.g summing, averaging, etc) into a single output
+
+It is important to note that the "reduce" steps aggregates all the value associated with a key into one final value for that key, but you can have many keys overall
+
+A few reduce functions include sum, average, count occurrences, and max/min value
