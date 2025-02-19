@@ -177,3 +177,37 @@ However, when it comes to representing many-to-one and many-to-many relationship
 
 That identifier is resolved at read time by using a join or follow-up queries, to date document models have not followed the path of CODASYL
 
+## Relational Versus Document Databases Today
+There are many differences to consider when comparing relational to document databases such as fault-tolerance properties and handling of concurrency, in this chapter we will concentrate only on the differences in the data model
+
+The main arguments in favor of the document data model are schema flexibility, better performance due to locality, and that for some applications, it is closer to the data structures used by the application, the relational model counters by providing better support for joins and many-to-one and many-to-many relationships
+
+### Deep Dive on Locality
+Okay so we hear locality a lot but what does it actually mean?
+
+Locality in this context refers to how data that's accessed together is stored close together in memory or on disk, this proximity can affect the performance because accessing nearby data (spatial locality) or re-accessing recently accessed data (temporal locality) is typically much faster
+
+In a relational database, the data is typically normalized, which means a user's basic info might be in on table, their orders in another, and their addresses in yet another table, when you need to gether all related information the database performs joins across multiple tables which lead to accessing data that is stored in different parts of the disk or memory, reducing the benefits of spatial locality
+
+Document databases often store related data together in one document, maximizing spatial locality for faster, more efficient read operations
+
+### Which Data Model Leads to Simpler Application Code
+If the data in your application has a document-like structure (i.e a tree of one-to-many relationships, where typically the entire tree is loaded at once), then it's probably a good idea to use a document model, the relational technique of *shredding* (splitting a document-like structure into multiple tables) can lead to cumbersome schemas and unnecessarily complicated application code
+
+The document model has limitations: for example, you cannot refer directly to a nested item within a document, but instead you need to say something like "the second item int he list of positions for user 251", however as long as documents are not too deeply nested, that is not actually a problem
+
+The poor support for joins in the document databases may or may not be a problem, depending on the application, for example many-to-many relationships may never be needed in an analytics application that uses a document database to record which events occurred at which time
+
+However, if your application does use many-to-many relationships, the document model becomes less appealing, it's possible to reduce the need for joins by denormalizing, but the application code needs to do additional work to keep the denormalized data consistent, joins can be emulated by making multiple database requests in the application code and is usually slower than a join performed by a specialized code inside the database
+
+### Schema Flexibility in the Document Model
+Document databases are often called "schemaless" because they don't enforce a strict schema at write time, allowing arbitrary keys and values, however applications typically assume an implicit structure (schema-on-read), unlike relational databases which enforce an explicit schema (schema-on-write)
+
+With document databases, if you need to change the data format, you can simply start writing new documents with the new fields and handle older formats at read time, in a relational database, schema changes typically require migrations that is something like
+```sql
+ALTER TABLE users ADD COLUMN first_name text;
+UPDATE users SET first_name = split_part(name, ' ', 1); -- PostgreSQL
+```
+Which can be done quickly on many systems, but may involve downtime or slower operations on large tables
+
+The debate between schema enforcement methods reflect trade-offs between flexibility and consistency, and there is no one-size-fits-all answer
