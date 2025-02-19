@@ -293,3 +293,59 @@ In the following expression, the variable `usa` is bound to any vertex that has 
 ```
 
 SPARQL is a nice query language, even if the semantic web never happens, it can be a powerful tools for applications to use internally
+
+## The Foundation: Datalog
+`Datalog` is a much older language than `SPARQL` or `Cypher` having been studied extensively by academics in the 1980s
+
+It is less well known among software engineers, but it is nevertheless important, because it provides the foundation that later query languages build upon
+
+In practice, Datalog is used in a few data systems: for example, it is the query language of Datomic, and Cascalog is a Datalog implementation for querying large datasets in Hadoop
+
+Datalog's data model is similar to the triple-store model, generalized a bit
+
+Instead of writing a triple as (subject, predicate, object), we write it as predicate(subject, object)
+
+```
+name(namerica, 'North America').
+type(namerica, continent).
+
+name(usa, 'United States').
+type(usa, country).
+within(usa, namerica).
+
+name(idaho, 'Idaho').
+type(idaho, state).
+within(idaho, usa).
+
+name(lucy, 'Lucy').
+born_in(lucy, idaho).
+```
+*This figure represents some of the data above in Datalog facts*
+
+Now that we have defined the data, we can write the same query as before, it looks a bit different from the equivalent in Cypher or SPARQL but don't let that put you off
+
+Datalog is a subset of Prolog, which is a general purpose logic programming language of similar syntax
+
+```sql
+within_recursive(Location, Name) :- name(Location, Name). /* Rule 1 */
+
+within_recursive(Location, Name) :- within(Location, Via), /* Rule 2 */
+
+ within_recursive(Via, Name).
+migrated(Name, BornIn, LivingIn) :- name(Person, Name), /* Rule 3 */
+    born_in(Person, BornLoc),
+    within_recursive(BornLoc, BornIn),
+    lives_in(Person, LivingLoc),
+    within_recursive(LivingLoc, LivingIn).
+?- migrated(Who, 'United States', 'Europe').
+/* Who = 'Lucy'. */
+```
+*The query above written in Datalog*
+
+Cypher and SPARQL jump in right away with *SELECT*, but Datalog takes a small step at a time
+
+We define *rules* that tell the database about new predicates: here, we define two new predicates, `within_recursive` and `migrated` these two predicates aren't triples stored in the database, but instead are derived from data or from other rules
+
+Rules can refer to other rules, just like functions can call other functions or recursively call themselves, like this, complex queries can be built up a small piece at a time
+
+The Datalog approach requires a different kind of thinking to the other query languages discussed in this chapter, it's less convenient for simple one-off queries, but it can cope better if your data is complex
