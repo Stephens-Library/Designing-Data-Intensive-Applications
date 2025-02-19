@@ -256,3 +256,40 @@ The URL `<http://my-company.com/namespace>` doesn't necessarily need to resolve 
 To avoid potential confusion with `https://URLs` the examples in this section use non-resolvable URIs such as `urn:example:within`
 
 Fortunately, you can just specify this prefix once at the top of the file, and then forget about it
+
+## The SPARQL Query Language
+*SPARQL* is a query language for triple-stores using the RDF data model
+
+It predates Cypher, and since Cypher's pattern matching is borrowed from SPARQL, they look quite similar
+
+The same query as before, finding people who have moved from US to Europe is even more concise in SPARQL then it is in Cypher
+
+```sql
+PREFIX : <urn:example:>
+    SELECT ?personName WHERE {
+    ?person :name ?personName.
+    ?person :bornIn / :within* / :name "United States".
+    ?person :livesIn / :within* / :name "Europe".
+}
+```
+*The same query from above, as expressed in SPARQL*
+
+The structure is very similar, the following two expressions are equivalent (variables start with a question mark in SPARQL)
+
+```sql
+(person) -[:BORN_IN]-> () -[:WITHIN*0..]-> (location) --- Cypher
+
+?person :bornIn / :within* ?location. --- SPARQL
+```
+
+Because RDF doesn't distinguish between properties and edges but just uses predicates for both, you can use the same syntax for matching properties
+
+In the following expression, the variable `usa` is bound to any vertex that has a `name` property whose value is in the string "United States":
+
+```sql
+(usa {name:'United States'}) --- Cypher
+
+?usa :name "United States". --- SPARQL
+```
+
+SPARQL is a nice query language, even if the semantic web never happens, it can be a powerful tools for applications to use internally
