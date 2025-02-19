@@ -17,6 +17,8 @@ Building software is hard enough, even when working with just one data model and
 
 We will look at a range of general-purpose data models for data storage and querying, in particular we will compare the relational data model, the document model, and a few graph based data models, in the next chapter we will discuss how storage engines work; that is, how these data models are actually implemented
 
+**Note**: Document databases are a type of NoSQL database, they store data in document formats like (JSON or BSON) which allows them to handle hierarchical data structures without requiring table-based structure and joins common in relational databases
+
 ## Relational Model Versus Document Model
 The best-known data model today is probably that of SQL, based on the relational model proposed by Edgar Codd in 1970: data is organized into *relations* (called *tables* in SQL) where each relation is an unordered collection of *tuples* (*rows* in SQL)
 
@@ -28,7 +30,7 @@ The roots of relational databases lie in *business data processing*, which was p
 
 Other databases at that time forced application developers to think a lot about the internal representation of the data in the database, the goal of the relational model was to hide that implementation behind a cleaner interface
 
-Over the years, there have been many competing approaches to data storage and querying, in the 1970s and early 1980s, the *network model* and the *hierachical model* were the main alternatives but the relational model came to dominate them
+Over the years, there have been many competing approaches to data storage and querying, in the 1970s and early 1980s, the *network model* and the *hierarchical model* were the main alternatives but the relational model came to dominate them
 
 Object databases came and went in the late 1980s and early 1990s, XML databases appeared in the early 2000s, but have only seen niche adoption, each competitor to the relational model generated a lot of hype in its time, but it never lasted
 
@@ -48,3 +50,75 @@ There are several driving forces behind the adoption of NoSQL databases, includi
 Different applications have different requirements, and the best choice of technology for one use case may well be different from the best choice for another use case
 
 It therefore seems like that in the foreseeable future, relational databases will continue to be used alongside a broad variety of nonrelational datastores, an idea that is sometimes called *polygot persistence*
+
+## The Object-Relational Mismatch
+Most application development today is done in OOP languages, which leads to a common criticism of the SQL model, if the data is stored in relational tables, an awkward translation layer is required between the objects in the application code and the database model, this disconnect between the models is sometimes called *impedance mismatch*
+
+Object-relational mapping (ORM) frameworks like ActiveRecord and Hibernate reduce the amount of boilerplate code required for this translation layer, but they can't completely hid the differences between the two models
+
+For example, we will try to illustrate how a resume could be expressed in a relational schema. The first profile as a whole can be identified by a unique identifier, `user_id`. Fields like `first_name` and `last_name` appear exactly once per user, so they can be modeled as columns on the `users` table
+
+However, most people have had more than one job in their career, and people may have varying number of pieces of contact information
+
+There is a one-to-many relationship from the users to these items, which can be represented various ways:
+- In the traditional SQL model, the most common normalized representation is to put positions, education, and contact information in separate tables, with a foreign key reference to the `users` table
+- Later versions of the SQL standard added support for structured data types and XML data, this allowed multi-valued data to be stored within a single row, with support for querying and indexing inside those documents, these features are supported to varying degrees by Oracle, IBM, DB2, MS SQL Server, and PostgreSQL. A JSON datatype is also supported by several databases including IBM DB2, MySQL, and PostgreSQL
+- A third option is to encode jobs, education, and contact info as a JSON or XML document, store it on a text 
+
+For a data structure like a resume, which is mostly a self-contained `document`, a JSON representation can be quite appropriate , JSON has the appeal of being much simpler than XML, JSON has the appeal of being much simpler than XML, document-oriented databases like MongoDB, RethinkDB, CouchDB, and Espresso support this data model
+
+```json
+{
+    "user_id": 251,
+    "first_name": "Bill",
+    "last_name": "Gates",
+    "summary": "Co-chair of the Bill & Melinda  Gates... Active blogger.",
+    "region_id": "us:91",
+    "industry_id": 131,
+    "photo_url": "/p/7/000/253/05b/308dd6e.jpg",
+    "positions": [
+        {"job_title": "Co-chair", "organization": "Bill & Melinda Gates Foundation"},
+        {"job_title": "Co-founder, Chairman", "organization": "Microsoft"}
+    ],
+    "education": [
+        {"school_name": "Harvard University", "start": 1973, "end": 1975},
+        {"school_name": "Lakeside School, Seattle", "start": null, "end": null}
+    ],
+    "contact_info": {
+        "blog": "http://thegatesnotes.com",
+        "twitter": "http://twitter.com/BillGates"
+    }
+}
+```
+
+Some developers feel that the JSON model reduces the impedance mismatch between the application code and the storage layer
+
+However, as we shall see in Chapter 4 (Encoding and Evolution) there are also problems with JSON as a data encoding format. The lack of a schema is often cited as an an advantage
+
+The JSON representation has better *locality* than the multiple-table schema, if you want to fetch a profile in the relational example, you need to either perform multiple queries (query each table by `user_id`) or perform a messy multi-way join between the `users` table and its subordinate tables
+
+In the JSON representation, all the relevant information is in one place, and one query is sufficient
+
+The one-to-many relationships from the user profile to the user's position, education history, and contact information imply a tree structure int he data, and the JSON representation makes this tree structure explicit
+
+![image](photos/one_to_many.png)
+
+## Many-to-One and Many-to-Many Relationships
+A lot of times, `region_id` and `industry_id` are given as IDs rather than plain-text strings, why is this?
+
+If the user interface has free-text fields for entering the region and the industry, it makes sense to store them as plain-text strings, but there are advantages to having a standardized list of geographic regions and industries, and letter users choose from a drop-down list or auto completer:
+- Consistent style and spelling across profiles
+- Avoid ambiguity if there are several cities in the same name
+- Ease of updating, the name is stored in only one place so it is easy to update across the board if it ever needs to be changed
+- Localization support (when the site is translated into other languages, the standardized list can be localized, so the region and industry can be displayed in the viewers language)
+- Better search e.g a search for philanthropists in the state of Washington can match this profile because the list of regions can encode the fact that Seattle is in Washington (not apparent from the string "Greater Seattle Area")
+
+Whether you store an ID or a text string is a question of duplication, when you use the ID, the information that is meaningful to humans (such as the word *Philanthropy*) is stored in only one place, and everything that refers to it uses an ID (which only has meaning in the DB)
+
+When you store text directly, you are duplicating the human-meaningful information in every record that uses it
+
+The advantage of using an ID is that because it has no meaning to humans it never needs to change, the ID can remain the same, even if the information it identifies changes
+
+Anything that is meaningful to humans may need to change sometime in the future, and if that information is duplicated, all the redundant copies need to be updated
+
+That incurs write overheads, and risks inconsistencies, removing such duplication is the key idea behind *normalization* in databases
