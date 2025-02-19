@@ -26,3 +26,45 @@ In the figure above, it shows two people Lucy from Idaho and Alain from Beaune, 
 In this section we will discuss the *property graph* model (implemented by Neo4j, Titan, and InfiniteGraph) and the *triple-store* model (implemented by Datomic, AllegroGraph, and others)
 
 We will look at three declarative query languages for graphs: Cypher, SPARQL, and Datalog, besides these there are also imperative graph query languages such as Gremlin and graph processing frameworks like Pregel
+
+## Property Graphs
+In the property graph model, each vertex consists of: 
+- A unique identifier
+- A set of outgoing edges
+- A set of incoming edges
+- A collection of properties (key-value pairs)
+
+Each edge consists of:
+- A unique identifier
+- The vertex at which the edge starts (the *tail* vertex)
+- The vertex at which the edge ends (the *head* vertex)
+- A label to describe the kind of relationship between the two vertices
+- A collection of properties (key-value pairs)
+
+You can think of a graph store as consisting of two relational tables, one for vertices and one for edges
+
+The head and tail vertex are stored for each edge; if you want the set of incoming or outgoing edges for a vertex, you can query the `edges` table by `head_vertex` or `tail_vertex` respectively
+
+```sql
+CREATE TABLE vertices (
+    vertex_id integer PRIMARY KEY,
+    properties json
+);
+CREATE TABLE edges (
+    edge_id integer PRIMARY KEY,
+    tail_vertex integer REFERENCES vertices (vertex_id),
+    head_vertex integer REFERENCES vertices (vertex_id),
+    label text,
+    properties json
+);
+
+CREATE INDEX edges_tails ON edges (tail_vertex);
+CREATE INDEX edges_heads ON edges (head_vertex);
+```
+*This figure represents a property graph using a relational schema*
+
+1. Any vertex can have an edge connecting it with any other vertex, there is no schema that restricts which kinds of things can or cannot be associated
+2. Given any vertex, you can efficiently find both its incoming and outgoing edges, and thus *traverse* the graph (which is why we create indexes on both the `tail_vertex` and the `head_vertex`)
+3. By using different labels for different kinds of relationships, you can store several different kinds of information in a single graph while still maintaining a clean data model
+
+Graphs are good for evolvability, as you add features to your application, a graph can easily be extended to accommodate changes in your application's data structures
