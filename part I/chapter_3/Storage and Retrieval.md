@@ -214,3 +214,47 @@ Typically, SSTable-based storage do not throttle the rate of incoming writes eve
 An advantage of B-trees is that each key exists in exactly one place in the index, whereas a log-structured storage engine may have multiple copes of the same key in different segments, this aspect makes B-trees attractive in databases that want to offer strong transactional semantics: in many relational databases, transaction isolation is implemented using locks on ranges of keys and in a B-tree index, those locks can be directly attached to the tree
 
 B-trees are very ingrained in the architecture of databases and provide consistently good performance for many workloads so it's unlikely that they will go away anytime, there is no quick and easy rule for determining which type of storage engine is better, so it's worth testing empirically
+
+## Other Indexing Structures
+So far, we have only discussed key-value indexes, which are like a *primary key* index in the relational model
+
+A primary key uniquely identifies one row in a relational table, or one document in a document database, or one vertex in a graph database
+
+Other records in the database can refer to that row/document/vertex by its primary key, and the index is used to resolve such references
+
+It is also very common to have *secondary indexes*, in relational databases, you can create several secondary indexes on the same table using the `CREATE INDEX` command, and they are often crucial for performing joins efficiently
+
+A secondary index can easily be constructed from a key-value index, the main difference is that keys are not unique, there might be many rows with the same key, this can be solved in two ways: either by making each value in the index a list of matching row identifiers or by making each key unique by appending a row identifier to it 
+
+Either way, both B-trees and log-structured indexes can be used as secondary indexes
+
+### Storing Values Within the Index
+The key in an index is the thing that queries search for, but the value can be one of two things, it could be the actual row (document, vertex) in question, or it could be a reference to the row stored elsewhere
+
+In the latter case, the place where rows are stored is known as a *heap file* and it stores data in no particular order
+
+The heap file approach is common because it avoids duplicating data when multiple secondary indexes are present, each index just references a location in the heap file, and the actual data is kept in one place
+
+When updating a value without changing the key, the heap file approach can be quite efficient: the record can be overwritten in place, provided that the new value is not larger than the old value
+
+The situation is more complicated if the new value is larger, as it probably needs to be moved to a new location in the heap where there is enough space
+
+In that case, either all indexes need to be updated to a point at the new heap location of the record, or a forwarding pointer is left behind in the old heap location
+
+In some situations, the extra hope from the index to the heap file is too much of a performance penalty for reads, so it can be desirable to store the indexed row directly within an index, this is known as a *clustered index* for example in MySQL's InnoDB storage engine, the primary key of a table is always a clustered index, and secondary indexes refer to the primary key (rather than a heap file location)
+
+A compromise between a clustered index (storing all row data within the index) and a non-clustered index (storing only references to the data within the index) is known as *covering index* or *index with included columns*, which stores *some* of a table's column
+
+As with any kind of duplication of data, clustered and covering indexes can speed up reads, but they require additional storage and can add overhead on writes, databases also need to go to additional effort to enforce transactional guarantees, because applications should not see inconsistencies due to the duplication
+
+Okay! Let me break that down
+
+A **heap file** is where your table's full rows (all data) are stored on disk, when you look up data using an index, a typical index just gives you a pointers to where the row is in the heap file
+
+A **non-clustered index**: It stores only the indexed columns plus a pointer to the full row in the heap file
+
+A clustered index actually stores the **full row data** along with the key, this means the table's rows are physically stored in the order of the clustered index, it eliminates the extra step to hop from the index to the heap file, making read operations faster
+
+**Covering index**: A non-clustered index that includes additional columns so that for certain queries, the index itself has all the data you need, eliminating extra disk access
+
+*Note*: It is called a heap file because it stores records in an unsorted, unordered manner like a physical heap, **it is unrelated to the heap data structure**
