@@ -32,3 +32,33 @@ This means that all the values in one input segment must be more recent than all
 You still need an in-memory index to tell you the offsets for some of the keys, but it can be sparse: one key for every few kilobytes of segment file is sufficient, because a few kilobytes can be scanned very quickly!
 
 3. Since read requests need to scan over several key-value pairs in the requested range anyway, it is possible to group those records into a block and compress it before writing it to disk, each entry of the sparse in-memory index then points at the start of a compressed block, besides saving disk space, compression also reduces the I/O bandwidth use
+
+### Constructing and Maintaining SSTables
+How do we ge3t data to be sorted by key in the first place? Our incoming writes can occur in any order
+
+Maintaining a sorted structure on disk is possible (B-Trees), but maintaining it in memory is much easier
+
+There are plenty of well-known tree data structures you can sue, such as red-black trees, or AVL trees
+
+With these data structure, you can insert keys in any order and read them back in sorted order, we can now make our storage engine work as follows:
+- When a write comes in, add it to an in-memory balanced tree structure (e.g red-black tree), this in-memory tree is sometimes called a *memtable*
+- When the memtable gets bigger than some threshold, typically a few megabytes, write it out to a disk as an SSTable file, this ca be done efficiently because three already maintains the key-value pairs sorted by key, the new SSTable file becomes the most recent segment of the database
+- In order to serve a read request, first try to find the key in the memtable, then in the most recent on-disk segment, then in the next-older segment, etc
+- From time to time, run a merging and compaction process in the background to combine segment files and to discard overwritten and deleted values
+
+### Making an LSM-tree out of SSTables
+The algorithm described here is essentially what is used in LevelDB and RocksDb, key-value storage engine libraries are designed to be embedded into other applications
+
+Among other things, LevelDB can be used in Riak as an alternative to Bitcast, similar storage engines are used in Cassandra and HBase
+
+Originally, this indexing structure was described b yPatrick O'Neil et al. under the name *Log-Structured Merge-Tree* (or LSM-Tree), building on earlier work on log-structured filesystems
+
+Storage engines that are based on this principle of merging and compacting sorted files are often called LSM storage engines
+
+Lucene, an indexing engine for full-text search used by Elastisearch and Solr, uses a similar method for storing its *term dictionary*
+
+A full-text index is much more complex than a key-value index but is based on a similar idea: given a word in a search query, find all the documents (web pages, product descriptions, etc) that mention the word
+
+This is implemented with a key-value structure where the key is a word (a *term*) and the value is the list of IDs of all the documents that contain the word (the *postings list*)
+
+In Lucene, this mapping from term to postings list is kept in SSTable-like sorted files, which are merged in the background as needed
