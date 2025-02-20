@@ -94,3 +94,42 @@ In leveled compaction, the key range is split up into smaller SSTables and older
 Even though there are many subtleties, the basic idea of LSM-trees (keeping a cascade of SSTables that are merged in the background) is simple and effective
 
 Even when the dataset is much bigger than the available memory it continues to work well, since data is stored in sorted order, you can efficiently perform range queries, and because the disk writes are sequential the LSM-tree can support remarkably high write throughput
+
+## B-Trees
+The log-structured indexes we have discussed so far are gaining acceptance, but they are not the most common type of index
+
+The most widely used indexing structure is quite different: The B-tree
+
+Like SSTables, B-trees keep key-value pairs sorted by key, which allows efficient key-value lookups and range queries, but that's where the similarity ends: B-trees have a very different design philosophy
+
+The log-structured indexes we saw earlier break the database down into variable-size segments, typically several megabytes or more in size, and always write a segment sequentially
+
+By contrast, B-trees break the data down into fixed-size *blocks* or *pages*, traditionally 4 KB in size, and read or write one page at a time
+
+This design corresponds more closely to the underlying hardware, as disks are also arranged in fixed-size blocks
+
+Each page can be identified using an address or location, which allows one page to refer to another, similar to a pointer, but on disk instead of in memory, we can use these page references to construct a tree of pages
+
+![Image](<photos/tree_of_pages.png>)
+*This figure depicts looking up a key using a B-tree index*
+
+One page is designated as the *root* of the B-tree; whenever you want to look up a key in the index, you start at the root
+
+The page contains several keys and references to child pages, each child is responsible for a continuous range of keys and the keys between the references indicate where the boundaries between those ranges lie
+
+In the photo above, we are looking for key 251, so we know that we need to follow the page reference between the boundaries 200 and 300, that takes us to similar-looking pages that further breaks down the 200-300 range into sub-ranges
+
+Eventually we get down to a page containing individual keys (a *leaf page*), which either contains the value for each key inline or contains references to the pages where the values can be found
+
+The number of references to a child page in one page of the B-tree is called the *branching factor*, in the photo above, the branching factor is six, in practice, the branching factor depends on the amount of space required to store the page references and the range boundaries, but typically is several hundred
+
+If you want to update the value for an existing key in a B-tree, you search for the leaf page containing the key, change the value in that page, and write the page back to disk
+
+If you want to add a new key, you need to find the page whose range encompasses the new key and add it to that page
+
+If there isn't enough free space in the page to accommodate the new key, it is split into two half-full pages, and the parent page is updated to account for the new subdivision of key ranges
+
+![Image](<photos/growing_b-tree.png>)
+
+This algorithm ensures that the tree remains *balanced* a B-tree with *n* keys always has a depth of O(log n), most databases can fit into a Btree that is three or four levels deep, so you don't need to follow many page references to find the page you are looking for (A four-level tree of 4 KB pages with a branching factor of 500 can store up to
+256 TB)
