@@ -62,3 +62,10 @@ A full-text index is much more complex than a key-value index but is based on a 
 This is implemented with a key-value structure where the key is a word (a *term*) and the value is the list of IDs of all the documents that contain the word (the *postings list*)
 
 In Lucene, this mapping from term to postings list is kept in SSTable-like sorted files, which are merged in the background as needed
+
+*My Explanation*: Essentially, the first important thing to note that an LSM tree is **NOT** a tree data structure the way a binary search tree is, a LSM tree refers to **the hierarchical organization of data across multiple levels**
+
+Here is how the levels/hierarchy is broken down
+1. Memtable: In-memory structure implemented with a balanced tree that keeps the keys sorted
+2. SSTable: When the memtable reaches a certain size, it is frozen and flushed to disk as an SSTable
+3. On-disk: The SSTables are organized into multiple levels via background compaction where SSTables from a lower level are merged into a higher level
