@@ -177,3 +177,40 @@ Even though B-tree implementations are generally more mature than LSM-tree imple
 As a rule of thumb, LSM-trees are typically faster for writes, whereas B-trees are thought to be faster for reads, reads are typically slower on LSM-trees because they have to check several different data structures and SSTables at different stages of compaction
 
 However, benchmarks are often inconclusive and sensitive to details of the workload, you need to test systems with your particular workload in order to make a valid comparison
+
+### Advantages of LSM-Trees
+A B-tree index must write every piece of data at least twice: once to the write-ahead log, and once to the tree page itself
+
+There is also overhead from having to write an entire page at a time, even if only a few bytes in that page changed up, some storage engines even overwrite the same page twice in order to avoid ending up with a partially updated page in the event of a power failure
+
+*Note*: Disks are organized into fixed-size units (pages or blocks), even if only a few bytes change, you still have to rewrite the entire fixed-size because that's the smallest unit the disk can write
+
+Log-structured indexes also rewrite data multiple times due to repeated compaction and merging of SSTables, this effect (where one write to the database causes multiple writes to the disk over the course of the database's lifetime) is called *write amplification*, it is of particular concern on SSDs which can only overwrite blocks a limited number of times before wearing out
+
+In write-heavy applications, the performance bottleneck might be the rate at which the database can write to the disk, in this case, write amplification has a direct performance cost: the more that a storage engine writes to a disk, the fewer writes per second it can handle within the available disk bandwidth
+
+Moreover, LSM-trees are typically able to sustain higher write throughput than B-trees, partly because they sometimes have lower write amplification (though this depends on the storage configuration and workload), and partly because they sequentially write compact SSTable files rather than having to overwrite several pages in the tree
+
+This difference is particularly important on magnetic hard drives, where sequential writes are much faster than random writes
+
+LSM-trees can be compressed better, and thus often produce smaller files on disk than B-trees, B-tree storage engines leave some disk space unused due to fragmentation: when a page is split or when a row cannot fit into an existing page, some space in a page remains unused, since LSM-trees are not page-oriented and periodically rewrite SSTables to remove fragmentation, they have lower storage overheads, especially when using leveled compaction
+
+On many SSDs, the firmware internally uses a log-structured algorithm to turn random writes into , sequential writes on the underlying storage chips so the impact on the storage engine's write pattern is less pronounced
+
+
+### Downsides of LSM-Trees
+A downside of a log-structured storage is that the compaction process can sometimes interfere with the performance of ongoing reads and writes, even though storage engines try to perform compactions incrementally and without affecting concurrent access, disks have limited sources, so it can easily happen that a request needs to wait while the disk finishes an expensive compaction operation
+
+The impact on throughput and average response time is usually small, but at higher percentiles, the response time of queries to log-structured storage engines can sometimes be quite high, and B-trees can be more predictable
+
+Another issue with compaction arises at high write throughput: the disk's finite write bandwidth needs to be shared between the initial write and the compaction threads running in the background
+
+When writing to an empty database, the full disk bandwidth can be used for the initial write, but the bigger the database gets, the more disk bandwidth is required for compaction
+
+If write throughput is high and compaction is not configured carefully, the compaction may not be able to keep up with the rate of incoming writes, and the number of unmerged segments on disk would keep growing until you run out of disk space, and reads also slow down because they need to check more segment files
+
+Typically, SSTable-based storage do not throttle the rate of incoming writes even if compaction cannot keep up so this needs to be explicitly monitored
+
+An advantage of B-trees is that each key exists in exactly one place in the index, whereas a log-structured storage engine may have multiple copes of the same key in different segments, this aspect makes B-trees attractive in databases that want to offer strong transactional semantics: in many relational databases, transaction isolation is implemented using locks on ranges of keys and in a B-tree index, those locks can be directly attached to the tree
+
+B-trees are very ingrained in the architecture of databases and provide consistently good performance for many workloads so it's unlikely that they will go away anytime, there is no quick and easy rule for determining which type of storage engine is better, so it's worth testing empirically
