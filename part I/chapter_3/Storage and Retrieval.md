@@ -156,3 +156,24 @@ This is an append-only file to which every B-tree modification must be written b
 An additional complication of updating pages in place is that careful concurrency control is required if multiple threads are going to access the B-tree at the same time, other a thread may see the tree in an inconsistent state
 
 This is done by protecting the tree's data structure with *latches*, log structured approaches are simpler in this regard, because they do all the merging in the background
+
+### B-Tree Optimizations
+As B-trees have been around for so long, it's not surprising that many optimizations have been developed over the years, to mention just a few:
+- Instead of overwriting pages and maintaining a WAL for crash recovery, some databases use a copy-on-write scheme, a modified page is written to a different location, and a new version of the parent pages in the tree is created, pointing at the new location
+
+- In general, pages can be positioned anywhere on disk, there is nothing requiring pages with nearby key ranges to be nearby on disk, if a query needs to scan over  large part of the key range in sorted order, that page-by-page layout can be inefficient, because a disk seek may be required for every page that is read
+
+Many B-tree implementations try to lay out the tree so that leaf pages appear in sequential order on disk, however it's difficult to maintain that order as the tree grows, by contrast since LSM-trees rewrite large segments of the storage in one go during merging, it's easier for them to keep sequential keys close to each other on disk
+
+- Additional pointers have been added to the tree, for example, each leaf page may have references to its sibling pages to the left and right, which allows scanning keys in order without jumping back to parent pages
+
+- B-tree variants such as *fractal trees* borrow from log-structured ideas to reduce disk seeks (and they have nothing to do with fractals)
+
+*Note*: A disk seek refers to the time it takes for a hard drive's read/write head to move to the track on the disk where the desired data is stored
+
+### Comparing B-Trees and LSM-Trees
+Even though B-tree implementations are generally more mature than LSM-tree implementations, LSM-trees are also interesting due to their performance characteristics
+
+As a rule of thumb, LSM-trees are typically faster for writes, whereas B-trees are thought to be faster for reads, reads are typically slower on LSM-trees because they have to check several different data structures and SSTables at different stages of compaction
+
+However, benchmarks are often inconclusive and sensitive to details of the workload, you need to test systems with your particular workload in order to make a valid comparison
