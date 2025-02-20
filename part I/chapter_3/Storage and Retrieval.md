@@ -133,3 +133,26 @@ If there isn't enough free space in the page to accommodate the new key, it is s
 
 This algorithm ensures that the tree remains *balanced* a B-tree with *n* keys always has a depth of O(log n), most databases can fit into a Btree that is three or four levels deep, so you don't need to follow many page references to find the page you are looking for (A four-level tree of 4 KB pages with a branching factor of 500 can store up to
 256 TB)
+
+### Making B-Trees Reliable
+The basic underlying write operation of a B-tree is to overwrite a page on disk with new data
+
+It is assumed that the overwrite does not change the location of the page, i.e., all references to that page remains intact when the page is overwritten
+
+This is in stark contrast to log-structured indexes such as LSM-trees, which only append to files but never modify files in place
+
+You can think of overwriting a page on disk as an actual hardware operation, on a magnetic hard drive, this means moving the disk head to the right place, waiting for the right position on the spinning platter to come around, and then overwriting the appropriate section with new data
+
+On SSDs, what happens is somewhat more complicated, due to the fact that an SSD must erase and rewrite fairly large blocks of a storage chip at a time
+
+Some operations require several different pages to be overwritten, for example if you split a page because an insertion caused it to be overfull, you need to write the two pages that were split, and also overwrite their parent page to update the references to the two child pages
+
+This is a dangerous operation as if the database crashes after only some pages have been overwritten, you might end up with a corrupted index (e.g an *orphan* page with no parent)
+
+To make the database resilient to crashes, it's common for B-tree implementations to include an additional data structure on disk: a *write-ahead log* (WAL, also known as *redo log*)
+
+This is an append-only file to which every B-tree modification must be written before it can be applied to the pages of the tree itself, when the database comes back up after a crash, this log is used to restore the B-tree back to a consistent state
+
+An additional complication of updating pages in place is that careful concurrency control is required if multiple threads are going to access the B-tree at the same time, other a thread may see the tree in an inconsistent state
+
+This is done by protecting the tree's data structure with *latches*, log structured approaches are simpler in this regard, because they do all the merging in the background
