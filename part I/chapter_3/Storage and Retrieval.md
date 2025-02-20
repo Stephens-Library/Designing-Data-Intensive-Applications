@@ -67,5 +67,30 @@ In Lucene, this mapping from term to postings list is kept in SSTable-like sorte
 
 Here is how the levels/hierarchy is broken down
 1. Memtable: In-memory structure implemented with a balanced tree that keeps the keys sorted
-2. SSTable: When the memtable reaches a certain size, it is frozen and flushed to disk as an SSTable
+2. SSTable: When the memtable reaches a certain size, it is frozen and flushed to disk as an SSTable **every time a flush occurs it writes to a new SSTable file, overtime you'll accumulate multiple SSTable files, and the background compaction process will merge them**
 3. On-disk: The SSTables are organized into multiple levels via background compaction where SSTables from a lower level are merged into a higher level
+
+*A deeper look*: I personally thought why don't they decide to store the files into one big file, wouldn't this reduce the searching radius?
+
+While it does, it is a tradeoff, you may have to perform a few more binary searches, but using multiple immutable files avoids the complexity and performance penalities of constantly updating one giant file and simplifies crash recovery
+
+### Performance Optimizations
+As always, a lot of detail goes into making a storage engine perform well in practice
+
+For example, the LSM-tree algorithm can be slow when looking up keys that do not exist in the database, you have to check the memtable, then the segments all the way back to the oldest before you can be sure that the key does not exist
+
+In order to optimize this kind of access, storage engines often use additional *Bloom filters*
+
+A bloom filter is a memory-efficient data structure for approximating the contents of a set, it can tell you if a key does not appear in the database, and thus saves many unnecessary disk reads for non-existent keys
+
+There are also different strategies to determine the order and timing of how SSTables are compacted and merged
+
+The most common options are *size-tiered* and *leveled* compaction, LevelDB and RocksDB use leveled compaction, HBase uses size-tiered and Cassandra supports both
+
+In size-tiered compaction, newer and smaller SSTables are successively merged into older and larger SSTables
+
+In leveled compaction, the key range is split up into smaller SSTables and older data is moved into separate "levels," which allows the compaction to proceed more incrementally and use less disk space
+
+Even though there are many subtleties, the basic idea of LSM-trees (keeping a cascade of SSTables that are merged in the background) is simple and effective
+
+Even when the dataset is much bigger than the available memory it continues to work well, since data is stored in sorted order, you can efficiently perform range queries, and because the disk writes are sequential the LSM-tree can support remarkably high write throughput
