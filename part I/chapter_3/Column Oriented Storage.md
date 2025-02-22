@@ -162,3 +162,22 @@ A common special case of a materialized view is known as a *data cube* or OLAP *
 We can use *data cubes* like a **prefix sum array** to quickly find values!
 
 ![Image](<photos/aggregate_cubes.png>)
+
+# Summary
+In this chapter we tried to get to the bottom of how databases handle storage and retrieval
+
+What happens when you store data in a database, and what does the database do when you query for the data again later?
+
+On a high level, we saw that storage engines fall two broad categories: those optimized for transaction processing (OLTP), and those optimized for analytics (OLAP), there are big differences between the access patterns in those use case
+- OLTP systems are typically user-facing, which means that they may see a huge volume of requests, in order to handle the load, applications usually only touch a small number of records in each query, the application requests records using some kind of key, and the storage engine uses an index to find the data for the requested key, disk seek time is often the bottle neck here
+- Data warehouses and similar analytic systems are less well known, because they are primarily used by business analysts, not by end users, they handle a much lower volume of queries than OLTP systems, but each query is typically very demanding requiring millions of records to be scanned in a short time, disk bandwidth is often the bottleneck here, and column-oriented storage is an increasingly popular solution for this kind of workload
+
+*Note*: Disk bandwidth refers to the maximum rate at which data can be read from or written to a storage device (like an HDD, SSD, or NVMe drive) **AFTER** the head has positions itself, disk seek time in the delay incurred whole the disk's read/write head moves to the correct track
+
+On the OLTP side, we saw storage engines from two main schools of thought
+- The log-structured school which only permits appending to files and deleting obsolete files, but never updates a file that has been written, bitcask, SSTables, LSM-trees, LevelDB, Cassandra, HBase, Lucene, and others belong here
+- The update-in-place school which treats the disk as a set of fixed-size pages that can be overwritten, B-trees are the biggest example of this and is used in all major relational databases and many non-relational ones
+
+Log-structured storage engines are a comparatively recent development. Their key idea is that they systematically turn random-access writes into sequential writes on disk, which enables higher write throughput due to the performance characteristics of hard drives and SSDs
+
+We then took a detour from the internals of storage engines to look at the high-level architecture of a typical data warehouse. This background illustrated why analytic workloads are so different from OLTP: when your queries require sequentially scanning across a large number of rows, indexes are much less relevant, instead it becomes important to encode data very compactly, to minimize the amount of data that the query needs to read from disk, and we discussed how column-oriented storage helps achieve this goal
