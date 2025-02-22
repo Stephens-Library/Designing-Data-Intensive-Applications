@@ -26,3 +26,32 @@ In order to differentiate this pattern of using databases from transaction proce
 At first the same databases were used for both transaction processing and analytic queries, SQL turned out to be quite flexible in this regard
 
 Nevertheless, in the late 1980s and early 1990s, there was a trend for companies to stop using their OLTP systems for analytic purposes and to run the analytics on a separate database instead, this separate database was called a *data warehouse*
+
+## Data Warehousing
+An enterprise may have dozens of different transaction processing systems: systems powering the customer-facing website, controlling point of sale systems in physical stores, tracking inventory in warehouses, planning routes for vehicles, managing suppliers, administering employees, etc
+
+Each of these systems is complex and needs a team of people to maintain it, so the systems end up operating mostly autonomously from each other
+
+These OLTP systems are usually expected to be highly available and to process transactions with low latency, since they are often critical to the operation of the business
+
+Database administrators therefore closely guard their OLTP databases, they are usually reluctant to let business analysts to run ad hoc analytic queries on OLTP database, since those queries are often expensive, scanning large part of the dataset, which can harm the performance of concurrently executing transactions
+
+A *data warehouse*, by contrast is a separate database that analysts cna query to their hearts' content, without affecting OLTP operations
+
+The data warehouse contains a read-only copy of the data in all the various OLTP systems in the company
+
+Data is extracted from OLTP databases (either a periodic data dump or a continuous stream of updates), transformed into an analysis-friendly schema, cleaned up, and then loaded into the data warehouse
+
+This process of getting data into the warehouse is known as *Extract-Transform-Load* (ETL) and is illustrated as below
+
+![Image](<photos/extract_transform_load.png>)
+
+Data warehouses now exist in almost all large enterprises, but in small companies they are almost unheard of
+
+This is probably because most small companies don't have so many different OLTP systems, and most small companies have a small amount of data, small enough that it can be queried in a conventional SQL database, or even analyzed in a spreadsheet
+
+In a large company, a lot of heavy lifting is required to do something that is simple in a small company
+
+A big advantage of using a separate data warehouse rather than querying OLTP systems directly for analytics is that the data warehouse can be optimized for analytic access patterns
+
+It turns out that the indexing algorithms discussed in the first half of this chapter work well for OLTP, but are not very good at answering analytic queries, we will look at storage engines optimized for analytics instead
