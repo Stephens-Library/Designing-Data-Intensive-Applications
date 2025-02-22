@@ -62,3 +62,21 @@ On the other hand:
 WHERE product_sk = 31 AND store_sk = 3:
 ```
 Would calculate the bitwise `AND`, this works because the columns contain the rows in the same order, so the *k*th bit in one column's bitmap corresponds to the same row as the *k*th bit in another column's bitmap
+
+### Column-Oriented Storage and Column Families
+Cassandra and HBase have a concept of *column families*, which they inherit from Bigtable
+
+However, it is very misleading to call them column-oriented: within each column family, they store all columns from a row together, along with a row key, and they do not use column compression, thus the Bigtable model is still mostly row-oriented
+
+### Memory Bandwidth and Vectorized Processing
+For data warehouse queries that need to scan over millions of rows, a big bottleneck is the bandwidth for getting data from disk into memory, however that is not the only bottleneck
+
+Developers of analytical databases also worry about efficiently using the bandwidth from main memory into the CPU cache, avoiding branch mispredictions and bubbles in the CPU instruction processing pipeline, and making use of single-instruction-multi-data (SIMD) instructions in modern CPUs
+
+Besides reducing the volume of data that needs to be loaded from disk, column-oriented storage layouts are also good for making efficient use of CPU cycles
+
+For example, the query engine can take a chunk of compressed column data that fits comfortably in the CPU's L1 cache and iterate through it in a tight loop
+
+A CPU can execute such a loop much faster than code that requires a lot of function calls and conditions for each record that is processed, column compression allows more rows from a column to fit in the same amount of L1 cache
+
+Operators, such as bitwise `AND` and `OR` described previously, can be designed to operate on such chunks of compressed column data directly, this technique is known as *vectorized processing*
