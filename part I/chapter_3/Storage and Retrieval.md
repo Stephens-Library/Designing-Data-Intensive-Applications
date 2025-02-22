@@ -258,3 +258,35 @@ A clustered index actually stores the **full row data** along with the key, this
 **Covering index**: A non-clustered index that includes additional columns so that for certain queries, the index itself has all the data you need, eliminating extra disk access
 
 *Note*: It is called a heap file because it stores records in an unsorted, unordered manner like a physical heap, **it is unrelated to the heap data structure**
+
+### Multi-Column Indexes
+The indexes discussed so far only map a single key to a value, it is not sufficient if we need to query multiple columns of a table simultaneously
+
+The most common type of multi-column index is called a *concatenated index* which simply combines several fields into one key by appending one column to another
+
+Multi-dimensional indexes are a more general way of querying several columns at once, which is particularly important for geo-spatial data
+
+For example, a restaurant-search website may have a database containing the latitude and longitude of each restaurant, when a user is looking at the restaurants on a map, the website needs to search for all the restaurants within the rectangular map area that the user is currently viewing
+
+This requires a two-dimensional range query like the following:
+```sql
+SELECT * FROM restaurants WHERE latitude > 51.4946 AND latitude < 51.5079 AND longitude > -0.1162 AND longitude < -0.1004;
+```
+A standard B-tree or LSM-tree index is not able to answer that kind of query efficiently, it can give you either all the restaurants in a range of latitudes or all the restaurants in a range of longitudes but not both simultaneously
+
+One option is to translate a two-dimensional location into a single number using a space-filling curve, then to use a regular B-tree index, more commonly, specialized spatial indexes use R-trees using PostgreSQL's Generalized Search Tree indexing facility
+
+### Full-Text Search and Fuzzy Indexes
+All the indexes discussed so far assume that you have exact data and allow you to query for exact values of a key, or a range of values of a key with a sort order
+
+What they don't allow you to do is a search for similar keys, such as misspelled words, such *fuzzy* querying requires different techniques
+
+For example, full-text search engines commonly allow a search for one word to be expanded to include synonyms of the word, to ignore grammatical variations of words, and to search for occurrences of words near each other in the same document, and support various other features that depend on linguistic analysis of the text
+
+To cope with typos in documents or queries, Lucene is able to search text for words within a certain edit distance
+
+As mentioned in "Making an LSM-tree out of SSTables", Lucene uses a SSTable for its term dictionary, this structure requires a small in-memory index that tells queries at which offset in the sorted file they need to look for a key
+
+In Lucene, the in-memory index is a finite state automation over the characters in the keys, similar to a *trie*, this automation can be transformed into a *Levenshtein automaton* which supports efficient search for words within a given edit distance
+
+Other fuzzy search techniques go in the direction of document classification and machine learning
