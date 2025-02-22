@@ -55,3 +55,20 @@ In a large company, a lot of heavy lifting is required to do something that is s
 A big advantage of using a separate data warehouse rather than querying OLTP systems directly for analytics is that the data warehouse can be optimized for analytic access patterns
 
 It turns out that the indexing algorithms discussed in the first half of this chapter work well for OLTP, but are not very good at answering analytic queries, we will look at storage engines optimized for analytics instead
+
+### The Divergence Between OLTP databases and Data Warehouses
+The data model of a data warehouse is most commonly relational, because SQL is generally a good fit for analytic queries
+
+There are many graphical data analysis tools that generate SQL queries, visualize the results, and allow analysts to explore the data (through operations such as *drill-down* and *slicing and dicing*)
+
+On the surface, a data warehouse and a relational OLTP database look similar, they both have a SQL query interface, however, the internals of the systems can look quite different, because they are optimized for very different query patterns
+
+Many database vendors now focus on supporting either transaction processing or analytic workloads but not both
+
+Some databases, such as Microsoft SQL Server and SAP HANA, have support for transaction processing and data warehousing in the same product
+
+However, they are increasingly becoming two separate storage and query engines, which happen to be accessible through a common SQL interface
+
+Data warehouse vendors such as Teradata, Vertica, SAP HANA, and ParAccel typically sell their systems under expensive commercial licenses, Amazon RedShift is a hosted version of ParAccel
+
+More recently, a plethora of open source SQL-on-Hadoop projects have emerged, they are young but aiming to compete with commercial data warehouse systems, these include Apache Hive, Spark SQL, Cloudera, Impala, Facebook Presto, Apache Tajo, and Apache Drill, some of them are based on ideas from Google's Dremel
