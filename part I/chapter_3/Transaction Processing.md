@@ -72,3 +72,35 @@ However, they are increasingly becoming two separate storage and query engines, 
 Data warehouse vendors such as Teradata, Vertica, SAP HANA, and ParAccel typically sell their systems under expensive commercial licenses, Amazon RedShift is a hosted version of ParAccel
 
 More recently, a plethora of open source SQL-on-Hadoop projects have emerged, they are young but aiming to compete with commercial data warehouse systems, these include Apache Hive, Spark SQL, Cloudera, Impala, Facebook Presto, Apache Tajo, and Apache Drill, some of them are based on ideas from Google's Dremel
+
+## Stars and Snowflakes: Scehams for Analytics
+A wide range of data models are used in the realm of transaction processing depending on the needs of the application
+
+On the other hand, in analytics, there is much less diversity of data models, many data warehouses are used in a fairly formulaic style known as *star schema* (also known as *dimensional modeling*)
+
+Below illustrates a data warehouse that may be found in a grocery retailer, at the center of the schema is a *fact table*, each fow of the fact table represents an event that occurred at a particular time, if we were analyzing website traffic rather than retail sales, each row m ight represent a page view or a click by a user
+
+![Image](<photos/star_schema.png>)
+*This figure shows an example of a star schema for use in a data warehouse*
+
+Usually, facts are captured as individual events, because this allows maximum flexibility for analysis later
+
+However, this means that the fact table can become extremely large, a big enterprise like Apple, Walmart, or eBay may have tens of petabytes of transaction history in its data warehouse, most of which is in fact tables
+
+Some of the columns in the fact tables are attributes, such as the price at which the product was sold and the cost of buying it from the supplier (to calculate profit margin)
+
+Other columns are foreign keys that reference to other tables called *dimension tables* as each row in the fact table represents an event, the dimension represents the *who, what, where, when, how, and why* of the event
+
+Even date and time are often represented using dimension tables, because this allows additional information about dates to be encoded, allowing queries to differential between sales on holidays and non-holidays
+
+The name "star schema" comes from the fact that when the table relationships are visualized, the fact table is in the middle, surrounded by its dimension tables; the connections to these tables are like rays of a star
+
+A variation of this template is known as the *snowflake schema* where dimensions are further broken down into sub-dimensions
+
+For example, there could be separate tables for brands and product categories, and each row in the `dim_product` table could reference the brand and category as foreign keys rather then storing them as strings in the `dim_product`
+
+Snowflake schemas are more normalized then star schemas, but star schemas are often preferred because they are simpler for analysts to work with
+
+In a typical data warehouse, tables are often very wide: fact tables often have over 100 columns, sometimes several hundred
+
+Dimension tables can also be very wide, as they include all the metadata that may be relevant for analysis, for example the `dim_store` table may include details of which services are offered at each store, whether it has an in-store bakery, the square footage, the date when the store was first opened, when it was last remodeled, how far it is from the nearest highway, etc
