@@ -137,3 +137,28 @@ It doesn't matter whether the in-memory store is row-oriented or column-oriented
 Queries need to examine both the column data on disk and the recent wires in memory, and combine the two
 
 However, the query optimizer hides this distinction from the user, from an analysts point of view, data that has been modified with inserts, updates, or deletes, is immediately reflected in subsequent queries
+
+## Aggregation: Data Cubes and Materialized Views
+Another aspect of data warehouses that is worth mentioning is *material aggregates*
+
+As discusses earlier, data warehouse queries often involve an aggregate function such as `COUNT`, `SUM`, `AVG`, `MIN`, or `MAX` in SQL
+
+If the same aggregates are used by many different queries, it can be wasteful to crunch through the raw data every time, why not cache some of the counts or sums that queries use most often?
+
+One way of creating such a cache is a *materialized view*, in a relational data model it is often defined like a standard view: a table-like object whose contents are the results of some query
+
+The difference is that a materialized view is an actual copy of the query results, written to disk, whereas a virtual view is just a shortcut for writing queries
+
+When you read from a virtual view, the SQL engine expands it into the view's underlying query on the fly and then processes the expanded query
+
+When the underlying data changes, a materialized view needs to be updated, because it is a denormalized copy of data, the database can do that automatically, but such updates make writes more expensive, which is why material views are not often used in OLTP databases
+
+In read-heavy data warehouses they can make more sense
+
+*Note:* Instead of writing a complex query over and over, you can define it once as a view and simply query the view as if it were a table, this is a *virtual view*, it is not so correlated to a *materialized view* that actually caches results onto the disk
+
+A common special case of a materialized view is known as a *data cube* or OLAP *cube*, it is a grid of aggregates grouped by different dimensions shown below
+
+We can use *data cubes* like a **prefix sum array** to quickly find values!
+
+![Image](<photos/aggregate_cubes.png>)
