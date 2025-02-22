@@ -80,3 +80,32 @@ For example, the query engine can take a chunk of compressed column data that fi
 A CPU can execute such a loop much faster than code that requires a lot of function calls and conditions for each record that is processed, column compression allows more rows from a column to fit in the same amount of L1 cache
 
 Operators, such as bitwise `AND` and `OR` described previously, can be designed to operate on such chunks of compressed column data directly, this technique is known as *vectorized processing*
+
+*Note*: SIMD (Single Instruction, Multi Data) is a type of parallel processing built into modern CPUs, it allows a single instruction to be executed on multiple data points simultaneously, rather than processing each piece at a time
+
+A single piece of instruction issued by the CPU operates on all the elements on a vector register concurrently
+
+Vector processing loads the data elements into vector registers quickly by loading the data into blocks (vectors)
+
+"Bubbles" refer to empty slots where no useful work is performed and misprediction of a branch happens when the CPU incorrectly guesses the outcome of a conditional branch (e.g the result of an if statement), mispredictions lead to bubbles as the pipeline is cleared and refilled
+
+## Sort Order in Column Storage
+In a column store, it doesn't necessarily matter in which order the rows are stored
+
+It's easiest to store them in the order in which they were inserted, since then inserting a new row just means appending to each of the column files
+
+However, we can choose to impose an order, like we did with SSTables previously, and use that as an indexing mechanism
+
+Note that it wouldn't make sense to sort each column independently, because then we would no longer know which items in the columns belong to the same row, we can only reconstruct a row because we know that the *k*th item in one column belongs to the same row as the *k*th item in another column
+
+Rather, the data needs to be sorted an entire row at a time, even though it is stored by column, the administrator of the database can choose the columns by the  which the table should be sorted, using their knowledge of common queries
+
+For example, if queries often target date ranges, such as the last month, it might make sense to make `date_key` the first sort key, then the query optimizer can scan only the rows from the last month, which will be much faster than scanning all rows
+
+A second column can determine the sort order of any rows that have the same value in the first column, for example if `date_key` is the first sort key it makes sense for `product_sk` to be the second sort key so that all sales for the same product on the same day are grouped together in storage, that will help queries that need to group or filter sales by product within a certain date range
+
+Another advantage of sorted order is that it can help with compression of columns, if the primary sort column does not have many distinct values, then after sorting, it will have long sequences where the same value is repeated many times in a row, a simple run-length encoding, like we used for the bitmaps could compress that column down to a few kb even if the table has billions of rows
+
+That compression effect is strongest on the first sort key, the second and third sort keys will be more jumbled up, and thus not have such long runs of repeated values
+
+Columns further down the sorting priority appear in essential random order, so they probably won't compress as well, but having the first few columns sorted is still a win overall
