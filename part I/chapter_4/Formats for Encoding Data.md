@@ -10,3 +10,18 @@ Thus we need some kind of translation between the two representations, this tran
 As this is such a common, there are a myriad of different libraries and encoding problems to choose from
 
 Long story short, **encoding creates a common format everyone can understand (interoperability)**
+
+## Language-Specific Formats
+Many programming languages come with built-in support for encoding in-memory objects into byte sequences
+
+FOr example, Java has `java.io.Serializable`, Ruby has `Marshal`, Python has `Pickle`, and so on
+
+Many third-party libraries also exist such as `Kryo` for Java
+
+These encoding libraries are very convenient, because they allow in-memory objects to be saved and restored with minimal additional code, however they also have a number of deep problems:
+- The encoding is often tied to a particular programming language, and reading the data in another language is difficult
+- In order to restore data in the same object types, the decoding process needs to be able to instantiate arbitrary classes, this is frequently a source of security problems: if an attacker can get your application code to decode an arbitrary byte sequence, they can instantiate arbitrary classes, which in turn often allows them to do terrible things such as remotely executing arbitrary code
+- Versioning data is often an afterthought in these libraries: as they are intended for quick and easy encoding of data, they often neglect the inconvenient problems of forward and backward compatibility
+- Efficiency (CPU time taken to encode or decode, and the size of the encoded structure) is also often an afterthought
+
+For these reasons it's generally a bad idea to use your language's built-in encoding for anything other than very transient purposes
