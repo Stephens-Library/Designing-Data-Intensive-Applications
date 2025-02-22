@@ -290,3 +290,34 @@ As mentioned in "Making an LSM-tree out of SSTables", Lucene uses a SSTable for 
 In Lucene, the in-memory index is a finite state automation over the characters in the keys, similar to a *trie*, this automation can be transformed into a *Levenshtein automaton* which supports efficient search for words within a given edit distance
 
 Other fuzzy search techniques go in the direction of document classification and machine learning
+
+### Keeping Everything in Memory
+The data structures discussed so far in this chapter have all been answers to the limitations of disks
+
+Compared to main memory, disks are awkward to deal with, with both magnetic disks and SSDs, data on disk needs to be laid out carefully if you want good performance on reads and writes
+
+However, we tolerate this awkwardness because disks have two significant advantages: they are durable (their contents are not lost if the power is turned off), and they have a lower cost per gigabyte than RAM
+
+As RAM becomes cheaper, the cost-per-gigabyte argument is eroded, many datasets are simply not that big, so it's feasible to keep them in memory, potentially distributed across several machine, this had led to the development of *in-memory databases*
+
+Some in-memory key-value stores such as Memcached are intended for caching use only, where it's acceptable for data to be lost if a machine is restarted
+
+But other-in memory databases aim for durability, which can be achieved with special hardware (such as a battery-powered RAM), by writing a log of changes to disk, by writing periodic snapshots to disk, or by replicating the in-memory state to other machines
+
+When an in-memory database is restarted, it needs to reload its state, either from disk or over the network from a replica unless special hardware is used
+
+Despite writing to disk, it's still an in-memory database, because the disk is merely used as an append-only log for durability, and reads are served entirely from memory, writing to disk also have operational advantages, files on disk can be easily backed up, inspected, and analyzed by external utilities
+
+Products such as VoltDB, MemSQL, and Oracle TimesTen are in-memory databases with a relational model, and the vendors claim that they can offer big performance improvements by removing all the overheads associated with managing on-disk data structures
+
+RAMCloud is an open source, in-memory key-value store with durability (using a log-structured approach for the data in memory as well as the data on disk), Redis and Couchbase provide weak durability by writing to disk asynchronously
+
+Counterintuitively, the performance advantage of in-memory databases is not due to the fact that they don't need to read from disk, even a disk-based storage engine may never need to read from disk if you have enough memory, rather they can be faster because they can avoid the overheads of encoding in-memory data structures in a form that can be written to disk
+
+Aside from performance, another interesting area for in-memory databases is providing data models that are difficult to implement with disk-based indexes
+
+For example, Redis offers a database-like interface to various data structures such as priority queues and sets, because it keeps all data in memory, its implementation is comparatively simple
+
+Recent research indicates that an in-memory database architecture could be extended to support datasets larger than the available memory, without bringing back the over-heads of a disk-centric architecture, the so-called *anti-caching* approach works by evicting the LRU data from memory to disk when there is not enough memory, and loading it back into memory when it is accessed again in the future
+
+Further changes to storage engine design will probably be needed if *non-volatile memory* (NVM) becomes more widely adopted, at present, this is a new research area worth keeping an eye on in the future!
