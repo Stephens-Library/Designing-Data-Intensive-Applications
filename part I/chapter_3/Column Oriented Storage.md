@@ -109,3 +109,31 @@ Another advantage of sorted order is that it can help with compression of column
 That compression effect is strongest on the first sort key, the second and third sort keys will be more jumbled up, and thus not have such long runs of repeated values
 
 Columns further down the sorting priority appear in essential random order, so they probably won't compress as well, but having the first few columns sorted is still a win overall
+
+### Several Different Sort Orders
+A clever extension of this idea was introduced in C-Store and adopted in the commercial data warehouse Vertica
+
+Different queries benefit from different sort orders, so why not store the same data sorted in several different ways?
+
+Data needs to be replicated to multiple machines anyway so you don't lose that data if one machine fails, you might as well store that redundant data sorted in different ways so that when you're processing a query, you can use the version that best fits the query pattern
+
+Having multiple sort orders in a column-oriented store is a bit similar to having multiple secondary indexes in a row-oriented store
+
+But the big difference is that the row-oriented store keeps every row in one place, and secondary indexes just contain pointers to the matching rows
+
+In a column store, there normally aren't any pointers to data elsewhere, only columns containing values
+
+## Writing to Column-Oriented Storage
+These optimizations make sense in data warehouses, because most of the load consists of large read-only queries run by analysts
+
+Column-oriented storage, compression, and sorting all help to make those read queries faster, however they have the downside of making writes more difficult
+
+An update-in-place approach, like B-trees use, is not possible with compressed columns, if you want to insert a row in the middle of a sorted table you would most likely have to rewrite all the column files, as rows are identified by their position within a column, the insertion has to update all columns consistently
+
+Fortunately, LSM-trees are a good solution, all writes first go to an in-memory store, where they are added to a sorted structure and prepared for writing to a disk
+
+It doesn't matter whether the in-memory store is row-oriented or column-oriented when enough writes have accumulated, they are merged with the column files on disk and written to new files in bulk, this is essentially what Vertica does
+
+Queries need to examine both the column data on disk and the recent wires in memory, and combine the two
+
+However, the query optimizer hides this distinction from the user, from an analysts point of view, data that has been modified with inserts, updates, or deletes, is immediately reflected in subsequent queries
