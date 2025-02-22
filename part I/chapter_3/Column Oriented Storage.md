@@ -175,7 +175,7 @@ On a high level, we saw that storage engines fall two broad categories: those op
 *Note*: Disk bandwidth refers to the maximum rate at which data can be read from or written to a storage device (like an HDD, SSD, or NVMe drive) **AFTER** the head has positions itself, disk seek time in the delay incurred whole the disk's read/write head moves to the correct track
 
 On the OLTP side, we saw storage engines from two main schools of thought
-- The log-structured school which only permits appending to files and deleting obsolete files, but never updates a file that has been written, bitcask, SSTables, LSM-trees, LevelDB, Cassandra, HBase, Lucene, and others belong here
+- The log-structured school which only permits appending to files and deleting obsolete files, but never updates a file that has been written, Bitcask, SSTables, LSM-trees, LevelDB, Cassandra, HBase, Lucene, and others belong here
 - The update-in-place school which treats the disk as a set of fixed-size pages that can be overwritten, B-trees are the biggest example of this and is used in all major relational databases and many non-relational ones
 
 Log-structured storage engines are a comparatively recent development. Their key idea is that they systematically turn random-access writes into sequential writes on disk, which enables higher write throughput due to the performance characteristics of hard drives and SSDs
