@@ -24,3 +24,35 @@ Backward compatibility is normally not hard to achieve, as author of the newer c
 We will look at several formats for encoding data, this includes JSON, XML, Protocol Buffers, Thrift, and Avro
 
 In particular, we will look at how they handle schema changes and support old and new data, we will discuss how those formats are used for data storage and communication: in web services, Representational State Transfer (REST), remote procedure calls (RPC), and message-passing systems such as actors and message queue
+
+# Formats for Encoding Data 
+Programs usually work with data in (at least) two different representations:
+1. In memory, data is kept in objects, structs, lists, arrays, hash tables, trees, and so on
+2. When you want to write data to a file or send it over the network you have to encode it as some kind of self-contained sequence of bytes (for example, a JSON document), since a pointer wouldn't make sense to any other process, this sequence-of-bytes looks different from data structures normally used in memory
+
+Thus, we need some kind of translation between the two representations, the translation from in-memory  representation to a byte sequence is called *encoding* (also known as *serialization* or *marshalling*), and the reverse is called *decoding* (*parsing*, *deserialization*, or *unmarshalling*)
+
+## Language-Specific Formats
+Many programming languages come with built-in support for encoding in-memory objects into byte sequences
+
+For example, Java has `java.io.Serializable`, Ruby has `Marshal`, and Python has `pickle`, these encoding libraries are very convenient because they allow in-memory objects to be saved and restored with minimal additional coding, however they also have a number of problems:
+- The encoding is often tied to a particular programming language and reading the data in another language is difficult, if you store or transmit data in such an encoding, you are committing yourself to your current programming language for potentially a very long time and precluding integration your systems with those of other organizations
+- In order to restore data in the same object types, the decoding process needs to be able to instantiate arbitrary classes, this is frequently a source of security problems: if an attacker can get your application to decode an arbitrary byte sequence, they can instantiate arbitrary classes which allows them to remotely execute code
+- Versioning and efficiency are afterthoughts
+
+For these reasons, it's generally a bad idea to use your language's built-in encoding for anything other than very transient purposes
+
+## JSON, XML, and Binary Variants
+Moving to standardized encodings that can be written and read by many programming languages, JSON and XML are obvious contenders
+
+They are widely known, widely supported, and almost widely disliked, XML is often criticized for being too verbose and unnecessarily complicated
+
+JSON's popularity is mainly due to its built-in support for web browsers (by virtue of being a subset of Javascript) and simplicity rather than XML, CSV is another popular language-independent format, albeit less powerful
+
+JSON, XML, and CSV are textual formats and thus somewhat human-readable, besides the superficial syntactic issues they also have some subtle problems
+- There is a lot of ambiguity around the encoding of numbers, in XML and CSV you cannot distinguish between a number and a string that happens to consist of digits, JSON distinguishes strings and numbers but it doesn't distinguish integers and floating point numbers, and it doesn't specify precision
+- JSON and XML have good support for Unicode character strings, but they don't support binary strings (a sequence of bytes without a character encoding), binary strings are a useful feature so people get around this limitation by encoding the binary data as text using Base64, the schema then used to indicate that the value should be interpreted as Base64-encoded, this works but increases the data size by 33%
+- There is optional schema support for powerful XML and JSON, these schema languages are quite powerful and thus quite complicated to learn and implement
+- CSV does not have any schema so it is up the application to define the meaning of each row and column, if an application change adds a new row or column you have to handle that change manually
+
+Despite these flaws, JSON, XML, and CSV are good enough for many purposes, it's likely that they will remain popular, especially as data interchange formats, in these situations as long as people agree on what the format is, it doesn't matter how pretty or efficient the format is, the difficulty is getting different organization to agree on *anything*
