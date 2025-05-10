@@ -41,3 +41,18 @@ For example, Java has `java.io.Serializable`, Ruby has `Marshal`, and Python has
 - Versioning and efficiency are afterthoughts
 
 For these reasons, it's generally a bad idea to use your language's built-in encoding for anything other than very transient purposes
+
+## JSON, XML, and Binary Variants
+Moving to standardized encodings that can be written and read by many programming languages, JSON and XML are obvious contenders
+
+They are widely known, widely supported, and almost widely disliked, XML is often criticized for being too verbose and unnecessarily complicated
+
+JSON's popularity is mainly due to its built-in support for web browsers (by virtue of being a subset of Javascript) and simplicity rather than XML, CSV is another popular language-independent format, albeit less powerful
+
+JSON, XML, and CSV are textual formats and thus somewhat human-readable, besides the superficial syntactic issues they also have some subtle problems
+- There is a lot of ambiguity around the encoding of numbers, in XML and CSV you cannot distinguish between a number and a string that happens to consist of digits, JSON distinguishes strings and numbers but it doesn't distinguish integers and floating point numbers, and it doesn't specify precision
+- JSON and XML have good support for Unicode character strings, but they don't support binary strings (a sequence of bytes without a character encoding), binary strings are a useful feature so people get around this limitation by encoding the binary data as text using Base64, the schema then used to indicate that the value should be interpreted as Base64-encoded, this works but increases the data size by 33%
+- There is optional schema support for powerful XML and JSON, these schema languages are quite powerful and thus quite complicated to learn and implement
+- CSV does not have any schema so it is up the application to define the meaning of each row and column, if an application change adds a new row or column you have to handle that change manually
+
+Despite these flaws, JSON, XML, and CSV are good enough for many purposes, it's likely that they will remain popular, especially as data interchange formats, in these situations as long as people agree on what the format is, it doesn't matter how pretty or efficient the format is, the difficulty is getting different organization to agree on *anything*
