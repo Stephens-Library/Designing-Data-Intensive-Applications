@@ -56,3 +56,31 @@ JSON, XML, and CSV are textual formats and thus somewhat human-readable, besides
 - CSV does not have any schema so it is up the application to define the meaning of each row and column, if an application change adds a new row or column you have to handle that change manually
 
 Despite these flaws, JSON, XML, and CSV are good enough for many purposes, it's likely that they will remain popular, especially as data interchange formats, in these situations as long as people agree on what the format is, it doesn't matter how pretty or efficient the format is, the difficulty is getting different organization to agree on *anything*
+
+### Binary Encoding
+For data that is used only internally within your organization, there is less pressure to use a lowest-common-denominator encoding format
+
+For example, you could choose a format that is more compact or faster to parse, for a small dataset the grains are negligible, but once you get into the terabytes, the choice of data format can have a big impact
+
+JSON is less verbose than XML but both still use a lot of space compared to binary formats, hence the development of binary encodings for JSON such as MessagePack, BSON, BJSON, UBJSON, BISON, and Smile and for XML, WBXML and Fast Infoset
+
+Say we look at MessagePack, a binary encoding for JSON, we use the example below
+```json
+{
+    "userName": "Martin",
+    "favoriteNumber": 1337,
+    "interests": ["daydreaming", "hacking"]
+}
+```
+
+1. The first byte, `0x83` indicates that what follows is an object with three fields, they are split into two nibbles (4-bit halves), high nibble = 0x8 and low nibble = 0x3, the high nibble is the *type code* for example 1000 xxxx means "fixmap" a small map/object whose size fits in 4 bits, and the low nibble is the *length* or *count*, here it means this fixmap has 3 key-value pairs
+2. The second byte, `0xa8` indicates that whatever follows is a string that is 8 bytes long
+3. The next eight bytes are the field name `userName` in ASCII, since the length was indicated previously there's no need for any marker to tell us where the string ends
+4. The next seven bytes encode the six-letter string value `Martin` with a prefix `0xa6` and so on
+
+The binary encoding is 66 bytes long, which is only a little less tha the 81 bytes taken by the textual JSON encoding (whitespace removed), all the binary encodings of JSON are similar in this regard, it's not clear whether such a small space reduction is worth the loss of human-readability
+
+In the following sections we will encode the same record in just 32 bytes!
+
+Below is the JSON fully encoded in MessagePack
+![MessagePack Encoding](<photos/messagepack_encoding.png>)
